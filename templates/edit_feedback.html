@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+
+
+
+<body>
+    <div class="container-scroller">
+        <!-- partial:partials/_sidebar.html -->
+        {% include 'partials/_sidebar.html' %}
+        <!-- partial -->
+        <div class="container-fluid page-body-wrapper">
+            <!-- partial:partials/_settings-panel.html -->
+
+            <!-- partial -->
+            <!-- partial:partials/_navbar.html -->
+            {% include 'partials/_navbar.html' %}
+            <!-- partial -->
+            <div class="main-panel">
+                <div class="content-wrapper pb-0">
+                    <div class="container mt-5">
+                        <h2 class="text-center m-0 font-weight-bold h3">User Feedback Data</h2>
+                        <p class="m-0 text-center mb-4 text-muted">The following data shown are based on the inputted data of users</p>
+                        <a href="/download-csv" class="btn btn-success mb-3 text-right">
+                            <i class="mdi mdi-file-excel"></i> Download CSV
+                        </a>
+                        <div class="card shadow p-4">
+                           <div class="table-responsive">
+                            <table id="feedbackTable" class="table table-bordered text-center">
+                                <thead class="text-center">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Course Code</th>
+                                        <th>Syllabus</th>
+                                        <th>Course Goals</th>
+                                        <th>Readings</th>
+                                        <th>Delivery Format</th>
+                                        <th>Overall Content</th>
+                                        <th>Insights</th>
+                                        <th>Mentor Feedback</th>
+                                        <th>Mentor Response</th>
+                                        <th>Mentor Availability</th>
+                                        <th>Mentor Overall</th>
+                                        <th>Mentor Feedback Text</th>
+                                        <th>Created At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data %}
+                                    <tr>
+                                        <td>{{ row[0] }}</td> <!-- ID -->
+                                        <td>{{ row[1] }}</td> <!-- Course code -->
+
+                                        <td>{{ row[2] }}</td> <!-- Syllabus -->
+                                        <td>{{ row[3] }}</td> <!-- Course Goals -->
+                                        <td>{{ row[4] }}</td> <!-- Readings -->
+                                        <td>{{ row[5] }}</td> <!-- Delivery Format -->
+                                        <td>{{ row[6] }}</td> <!-- Overall Content -->
+                                        <td>{{ row[7] }}</td> <!-- Insights -->
+                                        <td>{{ row[8] }}</td> <!-- Mentor Feedback -->
+                                        <td>{{ row[9] }}</td> <!-- Mentor Response -->
+                                        <td>{{ row[10] }}</td> <!-- Mentor Availability -->
+                                        <td>{{ row[11] }}</td> <!-- Mentor Overall -->
+                                        <td>{{ row[12] }}</td> <!-- Mentor Feedback Text -->
+                                        <td>{{ row[13] }}</td> <!-- Created At -->
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                           </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                {% include 'partials/_footer.html' %}
+                <!-- partial -->
+            </div>
+            <!-- main-panel ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#feedbackTable').DataTable();
+
+        });
+        // ✅ Function to refresh both ratio and table
+
+    </script>
+
+
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <!-- <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script> -->
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+</body>
+
+</html>

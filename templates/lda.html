@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+<style>
+    iframe {
+        width: 100%;
+        height: 90vh;
+        border: none;
+    }
+
+    .loader-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 90vh;
+    }
+    .loader {
+        border: 6px solid #f3f3f3;
+        /* Light gray */
+        border-top: 6px solid #3498db;
+        /* Blue */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<body>
+    <div class="container-scroller">
+        <!-- partial:partials/_sidebar.html -->
+        {% include 'partials/_sidebar.html' %}
+        <!-- partial -->
+        <div class="container-fluid page-body-wrapper">
+            <!-- partial:partials/_settings-panel.html -->
+
+            <!-- partial -->
+            <!-- partial:partials/_navbar.html -->
+            {% include 'partials/_navbar.html' %}
+            <!-- partial -->
+            <div class="main-panel">
+                <div class="content-wrapper pb-0">
+                    <!-- <div id="wordclouds">
+                        <div id="loading" class="flex justify-center items-center h-40">
+                            <div class="row">
+                                <div class="loader"></div>
+                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wordclouds"></div> -->
+
+
+                    <div class="row">
+                        <div class="col">
+                            
+                            
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body">
+
+                                    <h1>LDA Topic Modeling Visualization</h1>
+
+                                    
+                                    <div class="loader-container" id="loader-container">
+                                        <div id="loading" class="flex justify-content-center items-center h-40">
+                                            <div class="row">
+                                                <div class="loader"></div>
+                                                <p class="ml-3 text-gray-600">Loading LDA Content</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- LDA Visualization -->
+                                    <iframe id="lda-iframe" src="" title="LDA Visualization"></iframe>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+
+
+                </div>
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                {% include 'partials/_footer.html' %}
+                <!-- partial -->
+            </div>
+            <!-- main-panel ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+
+    <script>
+        window.addEventListener("DOMContentLoaded", () => {
+            const iframe = document.getElementById("lda-iframe");
+            const loader = document.getElementById("loader-container");
+
+            // Fetch the LDA visualization asynchronously
+            fetch("/lda_visualization")
+                .then(response => response.text())
+                .then(html => {
+                    const blob = new Blob([html], { type: "text/html" });
+                    const url = URL.createObjectURL(blob);
+
+                    iframe.src = url;
+                    iframe.style.display = "block";
+                    loader.style.display = "none";  // Hide the loader
+                })
+                .catch(error => {
+                    console.error("Error loading LDA visualization:", error);
+                    loader.innerHTML = "<p>Failed to load LDA visualization.</p>";
+                });
+        });
+    </script>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+</body>
+
+</html>

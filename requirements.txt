@@ -1,0 +1,14 @@
+Flask
+mysql-connector-python
+pandas
+numpy
+matplotlib
+wordcloud
+vaderSentiment
+nltk
+scikit-learn
+pyLDAvis
+joblib
+scipy
+flask-cors
+pymysql

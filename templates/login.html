@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+{% include 'partials/_headerLink.html' %}
+<style>
+    .loginForm {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+</style>
+
+<body class="bg-primary">
+    <div class="main-panel">
+
+        <div class="col-sm-5 col-md-4 grid-margin stretch-card loginForm">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center">
+                        <!-- <img src="assets/images/lgu.png" alt="" width="30%" class="img-fluid"> -->
+                        <span style="font-size: 100px;">📋</span>
+                        <hr>
+                        <h1 class="text-uppercase text-primary font-weight-bold">CME</h1>
+                        <p class="text-muted">Course and Mentor Evaluation System</p>
+                        <hr>
+                    </div>
+
+                    <h4 class="card-title">Login Here</h4>
+                    <p class="card-description">Input Credentials</p>
+                    <form class="forms-sample" id="login-form">
+
+                        <div class="form-group">
+                            <label for="exampleInputEmail1">Email address</label>
+                            <input type="email" class="form-control" name="email" id="exampleInputEmail1"
+                                placeholder="Email" required />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="exampleInputPassword1">Password</label>
+                            <input type="password" class="form-control" name="password" id="exampleInputPassword1"
+                                placeholder="Password" autocomplete="off" required />
+                        </div>
+
+                        <div class="form-check form-check-flat form-check-primary">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" name="remember_me" /> Remember me
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mr-2">Login</button>
+                        <button type="reset" class="btn btn-light">Clear</button>
+
+                    </form>
+
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $("#login-form").submit(function (event) {
+                event.preventDefault(); // Prevent normal form submission
+
+                $.ajax({
+                    type: "POST",
+                    url: "/login",
+                    data: $(this).serialize(),
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.status === "success") {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Success",
+                                text: response.message,
+                                timer: 2000, // Auto-close after 2 seconds
+                                showConfirmButton: false
+                            }).then(() => {
+                                window.location.href = response.redirect;
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Login Failed",
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function (xhr) {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Error",
+                            text: xhr.responseJSON ? xhr.responseJSON.message : "An unknown error occurred"
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+
+</body>
+
+</html>

@@ -1,0 +1,160 @@
+<style>
+  #logoutModal {
+    z-index: 9999 !important;  /* Ensure it's above all other elements */
+}
+.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s;
+}
+
+.flex {
+    opacity: 1;
+    visibility: visible;
+    z-index: 9999;  /* Ensure it stays on top */
+}
+
+</style>
+<!-- Logout Confirmation Modal -->
+<div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" style="z-index: 9999;">
+  <div class="bg-white rounded-lg shadow-lg w-96">
+      <div class="p-6">
+          <h2 class="text-xl font-bold">Confirm Logout</h2>
+          <p class="mt-2 text-gray-600">Are you sure you want to log out?</p>
+          <div class="flex justify-end mt-4">
+              <button id="cancelLogout" class="px-4 py-2 bg-gray-300 rounded-lg mr-2">Cancel</button>
+              <a href="{{ url_for('logout') }}?logout=success" id="confirmLogout" class="px-4 py-2 bg-red-500 text-white rounded-lg">Logout</a>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+<nav class="sidebar sidebar-offcanvas" id="sidebar">
+  <ul class="nav">
+    <li class="nav-item nav-profile border-bottom">
+      <a href="#" class="nav-link flex-column">
+        <div class="nav-profile-image">
+          <!-- <img src="assets/images/faces/face1.jpg" alt="profile" /> -->
+          <span style="font-size: 50px;">📋</span>
+          <!--change to offline or busy as needed-->
+        </div>
+        <div class="nav-profile-text d-flex ml-0 mb-3 flex-column">
+          <span class="font-weight-semibold mb-1 mt-2 text-center">{{ fullname }}</span>
+          <span class="text-secondary icon-sm text-center">{{ email }}</span>
+        </div>
+      </a>
+    </li>
+    <li class="nav-item pt-3">
+      <a class="nav-link d-block" href="index.html">
+        <!-- <img class="sidebar-brand-logo" src="assets/images/logo.svg" alt="" /> -->
+        <!-- <img class="sidebar-brand-logomini" src="assets/images/logo-mini.svg" alt="" /> -->
+        <!-- <div class="small font-weight-light pt-1">Responsive Dashboard</div> -->
+      </a>
+      <!-- <form class="d-flex align-items-center" action="#">
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <i class="input-group-text border-0 mdi mdi-magnify"></i>
+          </div>
+          <input type="text" class="form-control border-0" placeholder="Search" />
+        </div>
+      </form> -->
+
+      <!-- <a href="{{ url_for('logout') }}" class="btn btn-danger btn-block">Logout</a>
+        -->
+        <a href="javascript:void(0);" onclick="showLogoutModal()" class="btn btn-danger btn-block">Logout</a>
+
+
+    </li>
+    <li class="pt-2 pb-1">
+      <span class="nav-item-head">Home</span>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/dashboard">
+        <i class="mdi mdi-compass-outline menu-icon"></i>
+        <span class="menu-title">Dashboard</span>
+      </a>
+    </li>
+    <!-- <li class="nav-item">
+      <a class="nav-link" data-toggle="collapse" href="#ui-basic" aria-expanded="false" aria-controls="ui-basic">
+        <i class="mdi mdi-crosshairs-gps menu-icon"></i>
+        <span class="menu-title">UI Elements</span>
+        <i class="menu-arrow"></i>
+      </a>
+      <div class="collapse" id="ui-basic">
+        <ul class="nav flex-column sub-menu">
+          <li class="nav-item">
+            <a class="nav-link" href="pages/ui-features/buttons.html">Buttons</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="pages/ui-features/dropdowns.html">Dropdowns</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="pages/ui-features/typography.html">Typography</a>
+          </li>
+        </ul>
+      </div>
+    </li> -->
+    <li class="nav-item">
+      <a class="nav-link" href="/voc">
+        <i class="mdi mdi-contacts menu-icon"></i>
+        <span class="menu-title">VOC</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/cme">
+        <i class="mdi mdi-format-list-bulleted menu-icon"></i>
+        <span class="menu-title">CME</span>
+      </a>
+    </li>
+    <li class="nav-item border-bottom">
+      <a class="nav-link" href="/lda">
+        <i class="mdi mdi-chart-bar menu-icon"></i>
+        <span class="menu-title">LDA</span>
+      </a>
+    </li>
+    <!-- <li class="nav-item">
+      <a class="nav-link" href="pages/tables/basic-table.html">
+        <i class="mdi mdi-table-large menu-icon"></i>
+        <span class="menu-title">Tables</span>
+      </a>
+    </li> -->
+    <li class="pt-3 pb-1">
+      <span class="nav-item-head">Analysis</span>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/sentiment">
+        <i class="mdi mdi-face menu-icon"></i>
+        <span class="menu-title">Sentiment</span>
+      </a>
+    </li>
+    <li class="nav-item">
+      <a class="nav-link" href="/feedback">
+        <i class="mdi mdi-table-edit menu-icon"></i>
+        <span class="menu-title">Feedback</span>
+      </a>
+    </li>
+  </ul>
+</nav>
+
+
+<script>
+  function showLogoutModal() {
+      document.getElementById('logoutModal').classList.remove('hidden');
+  }
+
+  // Close the modal when cancel button is clicked
+  document.getElementById('cancelLogout').addEventListener('click', () => {
+      document.getElementById('logoutModal').classList.add('hidden');
+  });
+
+  // Close the modal when clicking outside of it
+  window.addEventListener('click', (event) => {
+      const modal = document.getElementById('logoutModal');
+      if (event.target === modal) {
+          modal.classList.add('hidden');
+      }
+  });
+</script>
+
+

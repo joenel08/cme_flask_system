@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+<style>
+    .loader {
+        border: 6px solid #f3f3f3;
+        /* Light gray */
+        border-top: 6px solid #3498db;
+        /* Blue */
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .wordcloud-wrapper {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        /* Add spacing between images */
+        margin-top: 20px;
+    }
+
+    .wordcloud-item {
+        text-align: center;
+        max-width: 32%;
+        /* Each image takes up 1/3 of the container */
+        flex: 1;
+        /* Allow flexible growth */
+        box-sizing: border-box;
+    }
+
+    .wordcloud-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* Fit the image without stretching */
+        max-width: 400px;
+        /* Limit max size */
+        max-height: 300px;
+        /* Ensure consistency */
+        border: 1px solid #ccc;
+        /* Optional border */
+        border-radius: 8px;
+        /* Rounded corners */
+        transition: transform 0.3s;
+        /* Smooth hover effect */
+    }
+
+    .wordcloud-item img:hover {
+        transform: scale(1.05);
+        /* Slight zoom on hover */
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .wordcloud-item {
+            max-width: 45%;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .wordcloud-item {
+            max-width: 100%;
+        }
+    }
+</style>
+
+
+
+<body>
+    <div class="container-scroller">
+        <!-- partial:partials/_sidebar.html -->
+        {% include 'partials/_sidebar.html' %}
+        <!-- partial -->
+        <div class="container-fluid page-body-wrapper">
+            <!-- partial:partials/_settings-panel.html -->
+
+            <!-- partial -->
+            <!-- partial:partials/_navbar.html -->
+            {% include 'partials/_navbar.html' %}
+            <!-- partial -->
+            <div class="main-panel">
+                <div class="content-wrapper pb-0">
+
+                    <div id="wordclouds">
+                        <div id="loading" class="flex justify-center items-center h-40">
+                            <div class="row">
+                                <div class="loader"></div>
+                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wordcloudContainer"></div>
+
+
+                    <div class="row mt-3">
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body d-flex flex-wrap justify-content-between">
+                                    <h4 class="font-weight-semibold mb-1 text-black">Course Analysis Distribution
+                                    </h4>
+
+                                    <canvas id="courseChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+
+
+
+                </div>
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                {% include 'partials/_footer.html' %}
+                <!-- partial -->
+            </div>
+            <!-- main-panel ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+
+    <script>
+        // Show loader before fetching word clouds
+        function showLoader() {
+            document.getElementById('loading').classList.remove('hidden');
+        }
+
+        // Hide loader after fetching word clouds
+        function hideLoader() {
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        // Fetch Chart Data
+        fetch('/CME-chart-data')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('courseChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Top 100 Courses by Count',
+                            data: data.data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+
+        // Fetch Word Cloud Data
+        showLoader(); // Show loader before fetching data
+
+        fetch('/CME-wordcloud-data')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('wordcloudContainer');
+                container.innerHTML = '';  // Clear existing content
+
+                // Create wrapper div to hold the images horizontally
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('wordcloud-wrapper');
+
+                // Display in order (Positive > Neutral > Negative)
+                const sentimentOrder = ['Positive', 'Neutral', 'Negative'];
+
+                sentimentOrder.forEach(label => {
+                    if (data[label]) {  // Check if the label exists in the data
+                        const item = document.createElement('div');
+                        item.classList.add('wordcloud-item');
+
+                        const title = document.createElement('h4');
+                        title.textContent = `${label} Sentiment`;
+                        title.classList.add('font-weight-semibold', 'mb-1', 'text-black');
+
+                        const img = document.createElement('img');
+                        img.src = data[label];  // Base64 image data
+                        img.alt = `${label} Sentiment Word Cloud`;
+
+                        item.appendChild(title);
+                        item.appendChild(img);
+                        wrapper.appendChild(item);
+                    }
+                });
+
+                container.appendChild(wrapper);
+                hideLoader();  // Hide loader after data is fetched
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideLoader();
+                const container = document.getElementById('wordcloudContainer');
+                container.innerHTML = '<p class="text-danger">Failed to load word clouds. Please try again later.</p>';
+            });
+
+
+    </script>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+</body>
+
+</html>

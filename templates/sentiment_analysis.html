@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+
+
+<style>
+    /* Button styling */
+    #analyze-btn {
+        font-size: 16px;
+
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s;
+    }
+
+    #analyze-btn:disabled {
+        background-color: #ccc !important;
+        cursor: not-allowed;
+    }
+
+    /* Spinner inside button */
+    .spinner {
+        width: 18px;
+        height: 18px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-left: 10px;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .card-ratio {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .ratio-card {
+        flex: 1;
+        margin: 0 10px;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px;
+        color: #fff;
+    }
+
+    .positive {
+        background-color: #28a745;
+    }
+
+    .negative {
+        background-color: #dc3545;
+    }
+
+    .neutral {
+        background-color: #ffc107;
+        color: #000;
+    }
+</style>
+
+<body>
+    <div class="container-scroller">
+        <!-- partial:partials/_sidebar.html -->
+        {% include 'partials/_sidebar.html' %}
+        <!-- partial -->
+        <div class="container-fluid page-body-wrapper">
+            <!-- partial:partials/_settings-panel.html -->
+
+            <!-- partial -->
+            <!-- partial:partials/_navbar.html -->
+            {% include 'partials/_navbar.html' %}
+            <!-- partial -->
+            <div class="main-panel">
+                <div class="content-wrapper pb-0">
+
+
+
+                    <div class="row">
+                        <div class="col">
+
+
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body">
+                                    <div class="home-content">
+                                        <div class="container">
+                                            <h3 class="text-center font-weight-bold">Sentiment Analysis Checker</h3>
+
+                                            <p class="text-center font-weight-bold mb-3 text-muted">Use sentiment
+                                                analysis to quickly detect feelings and pain points.</p>
+
+                                            <textarea id="input-text" rows="10" class="form-control"
+                                                placeholder="Enter text here..."></textarea>
+
+                                            <button id="analyze-btn" class="btn btn-primary mt-3 btn-block">
+                                                <span id="btnText">Analyze Sentiment</span>
+                                                <div id="btnSpinner" class="spinner" style="display: none;"></div>
+                                            </button>
+
+
+                                            <div id="result" class="text-center font-weight-bold mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Sentiment Ratio Cards -->
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body d-flex flex-wrap justify-content-between">
+                                    <div>
+                                        <h4 class="font-weight-semibold mb-1 text-black"> Positive Ratio </h4>
+                                        <h6 class="text-muted">Positive Feedback</h6>
+                                    </div>
+                                    <h3 class="text-success font-weight-bold"><span id="positive-count">{{
+                                            ratio.positive }} / {{ ratio.total }}</span></h3>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body d-flex flex-wrap justify-content-between">
+                                    <div>
+                                        <h4 class="font-weight-semibold mb-1 text-black"> Negative Ratio </h4>
+                                        <h6 class="text-muted">Negative Feedback</h6>
+                                    </div>
+                                    <h3 class="text-danger font-weight-bold"><span id="negative-count">{{ ratio.negative
+                                            }} / {{ ratio.total }}</span></h3>
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body d-flex flex-wrap justify-content-between">
+                                    <div>
+                                        <h4 class="font-weight-semibold mb-1 text-black"> Neutral Ratio </h4>
+                                        <h6 class="text-muted">Neutral Feedback</h6>
+                                    </div>
+                                    <h3 class="text-yellow-500 font-weight-bold"><span id="negative-count">{{
+                                            ratio.neutral }} / {{ ratio.total }}</span></h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body d-flex flex-wrap justify-content-between">
+                                    <div>
+                                        <h4 class="font-weight-semibold mb-1 text-black"> Total Feedback</h4>
+                                        <h6 class="text-muted">Overall Feedback</h6>
+                                    </div>
+
+                                    <h3 class="text-danger font-weight-bold"><span id="total-card">{{ ratio.total
+                                            }}</span></h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- sentiment ratio -->
+                    <div class="container mt-5">
+                        <h2 class="text-center m-0 font-weight-bold h3">Sentiment Analysis Data</h2>
+                        <p class="m-0 text-center mb-4 text-muted">The following data shown are solely based on the inputted data</p>
+                      
+
+                        <div class="card shadow p-4">
+                            <table id="sentimentTable" class="table table-bordered text-center">
+                                <thead class="text-center">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Review</th>
+                                        <th>Predicted Sentiment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in data %}
+                                    <tr>
+                                        <td>{{ row[0] }}</td> <!-- ID -->
+                                        <td>{{ row[1] }}</td> <!-- Date -->
+                                        <td>{{ row[2] }}</td> <!-- Review -->
+                                        <td>
+                                            {% if row[3] == 'Positive' %}
+                                            <span class="badge bg-success">Positive</span>
+                                            {% elif row[3] == 'Negative' %}
+                                            <span class="badge bg-danger text-white">Negative</span>
+                                            {% else %}
+                                            <span class="badge bg-warning text-dark">Neutral</span>
+                                            {% endif %}
+                                        </td>
+
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+
+                </div>
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                {% include 'partials/_footer.html' %}
+                <!-- partial -->
+            </div>
+            <!-- main-panel ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+    <script>
+        $(document).ready(function () {
+            $('#sentimentTable').DataTable({
+                "ajax": "/get_table_data",   // Your backend endpoint
+                "searching": true,
+                "info": true,
+                "lengthChange": true,
+                "columns": [
+                    { "data": "id" },
+                    { "data": "date" },
+                    { "data": "review" },
+                    {
+                        "data": "sentiment",
+                        "render": function (data, type, row) {
+                            if (data === 'Positive') {
+                                return '<span class="badge bg-success text-white">Positive</span>';
+                            } else if (data === 'Negative') {
+                                return '<span class="badge bg-danger text-white">Negative</span>';
+                            } else {
+                                return '<span class="badge bg-yellow-500 text-white">Neutral</span>';
+                            }
+                        }
+                    }
+                ]
+            });
+
+            $('#analyze-btn').click(function () {
+                let inputText = $('#input-text').val();
+
+                if (inputText.trim() === '') {
+                    $('#result').html("<span class='text-danger'>Please enter text.</span>");
+                    return;
+                }
+
+                // ✅ Disable button and show spinner inside it
+                $('#analyzeBtn').prop('disabled', true);
+                $('#btnText').text('Analyzing...');
+                $('#btnSpinner').show();
+
+                $.ajax({
+                    url: '/predict_sentiment',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ text: inputText }),
+                    success: function (response) {
+
+                        // ✅ Restore button state
+                        $('#analyzeBtn').prop('disabled', false);
+                        $('#btnText').text('Analyze Sentiment');
+                        $('#btnSpinner').hide();
+
+                        $('#result').html(`<span class="text-success">Sentiment: ${response.sentiment}</span>`);
+
+                        $.ajax({
+                            url: '/get_sentiment_ratio',
+                            type: 'GET',
+                            success: function (data) {
+                                console.log('AJAX Response:', data);  // Verify the structure
+
+                                // ✅ Update ratio cards
+                                if (data.ratio) {
+                                    $('#positive-count').text(data.ratio.positive);
+                                    $('#negative-count').text(data.ratio.negative);
+                                    $('#neutral-count').text(data.ratio.neutral);
+                                    $('#total-card').text(data.ratio.total);
+                                } else {
+                                    console.error('Ratio data missing');
+                                }
+
+                                // ✅ Refresh the DataTables with the latest data
+                                $('#sentimentTable').DataTable().ajax.reload(null, false);  // false prevents table from resetting pagination
+
+                            }
+                        });
+
+
+
+                    },
+                    error: function () {
+                        // ✅ Restore button state on error
+                        $('#analyzeBtn').prop('disabled', false);
+                        $('#btnText').text('Analyze Sentiment');
+                        $('#btnSpinner').hide();
+                        $('#result').html("<span class='text-danger'>Error analyzing sentiment. Try again.</span>");
+                    }
+                });
+            });
+
+
+
+
+        });
+        // ✅ Function to refresh both ratio and table
+
+    </script>
+
+
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <!-- <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script> -->
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+</body>
+
+</html>

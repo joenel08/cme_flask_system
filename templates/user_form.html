@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+<style>
+    .form-check {
+        display: flex;
+        flex-direction: column;
+        /* Stack checkbox and label vertically */
+        align-items: center;
+        gap: 5px;
+        /* Space between checkbox and label */
+        text-align: center;
+    }
+
+    .form-check-input {
+        width: 30px;
+        height: 30px;
+        border-radius: 0;
+        /* Square shape */
+        border: 1px solid #ccc;
+        appearance: none;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        cursor: pointer;
+
+    }
+
+    .form-check-input:checked {
+        background-color: #0033c4;
+        /* Bootstrap primary color */
+        border-color: #0033c4;
+        color: white;
+    }
+
+    .form-check-input:checked::before {
+        content: "✔";
+        /* Check icon */
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+    }
+
+    .form-check-input:hover {
+        border-color: #0033c4;
+    }
+
+    .form-check-label {
+        margin-left: 30px;
+        font-size: 18px;
+        color: #000;
+        /* Ensure label color is visible */
+    }
+
+    textarea {
+        resize: none;
+    }
+
+    .user_form {
+        width: 70% !important;
+        margin: auto !important;
+    }
+
+    .select2-container {
+            width: 50% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+    height: 38px !important;   /* Match your input height */
+    display: flex !important;  
+    align-items: center !important;  
+    line-height: normal !important;
+}
+</style>
+
+<body>
+    <br>
+    <div class="user_form">
+        <form method="POST" action="/submit">
+            <div class="row">
+                <div class="col-md grid-margin stretch-card ">
+                    <div class="card shadow-md">
+                        <div class="card-body">
+                            <div class="text-center m-0">
+
+                                <span class="m-0 p-0" style="font-size: 100px;">📋</span>
+
+                                <h1 class="text-uppercase text-primary font-weight-bold m-0">CME</h1>
+
+
+                            </div>
+                            <h2 class="card-title text-center">Evaluation Form</h2>
+                            <p class="card-description text-center">Your sentiment is valuable to us</p>
+                            <div class="row text-center mb-3">
+                                <div class="col">
+                                    <label for="">Choose Course Code:</label>
+                                    <select id="course_code" class="" name="course_code">
+                                        <option value="BAHRM6303">BAHRM6303</option>
+                                        <option value="PHIL121">PHIL121</option>
+                                        <option value="STAT112">STAT112</option>
+                                        <option value="PEDH121">PEDH121</option>
+                                        <option value="PSYC6401">PSYC6401</option>
+                                        <option value="ENGL121">ENGL121</option>
+                                        <option value="HMRM112">HMRM112</option>
+                                        <option value="ENGL6335">ENGL6335</option>
+                                        <option value="MATH6100">MATH6100</option>
+                                        <option value="PEDH122">PEDH122</option>
+                                        <option value="ICT112">ICT112</option>
+                                        <option value="UCSP111">UCSP111</option>
+                                        <option value="ELSC111">ELSC111</option>
+                                        <option value="PEDH112">PEDH112</option>
+                                        <option value="MEIL122">MEIL122</option>
+                                        <option value="REM6122">REM6122</option>
+                                        <option value="RSCH122">RSCH122</option>
+                                        <option value="GE6104">GE6104</option>
+                                        <option value="EDUC241">EDUC241</option>
+                                        <option value="GE6101">GE6101</option>
+                                        <option value="NSCI6100">NSCI6100</option>
+                                        <option value="CS6326">CS6326</option>
+                                        <option value="ENGL6232">ENGL6232</option>
+                                        <option value="HUMSS126">HUMSS126</option>
+                                        <option value="COMP121">COMP121</option>
+                                        <option value="MBA001">MBA001</option>
+                                        <option value="PSYC6302">PSYC6302</option>
+                                        <option value="PSYC6101">PSYC6101</option>
+                                        <option value="GE6106">GE6106</option>
+                                        <option value="CHEM122">CHEM122</option>
+                                        <option value="GE6100">GE6100</option>
+                                        <option value="GE6108">GE6108</option>
+                                        <option value="ECON6352">ECON6352</option>
+                                        <option value="FILI6201">FILI6201</option>
+                                        <option value="FILI121">FILI121</option>
+                                        <option value="BP002">BP002</option>
+                                        <option value="FILI6301">FILI6301</option>
+                                        <option value="PSYC6102">PSYC6102</option>
+                                        <option value="EDUC6242">EDUC6242</option>
+                                        <option value="PHYED6102">PHYED6102</option>
+                                        <option value="RSCH6258">RSCH6258</option>
+                                        <option value="CYBS6200">CYBS6200</option>
+                                        <option value="ITE6101">ITE6101</option>
+                                        <option value="BA312">BA312</option>
+                                        <option value="IT6223">IT6223</option>
+                                        <option value="PHYED6101">PHYED6101</option>
+                                        <option value="REM6211">REM6211</option>
+                                        <option value="GE6115">GE6115</option>
+                                        <option value="PSYC6202">PSYC6202</option>
+                                        <option value="PHYED6200">PHYED6200</option>
+                                        <option value="MISLA6111">MISLA6111</option>
+                                        <option value="GE6114">GE6114</option>
+                                        <option value="PEDH111">PEDH111</option>
+                                        <option value="GE6107">GE6107</option>
+                                        <option value="PSYC6205">PSYC6205</option>
+                                        <option value="MBA105">MBA105</option>
+                                        <option value="ENGL112">ENGL112</option>
+                                        <option value="ACTG6141">ACTG6141</option>
+                                        <option value="GE6102">GE6102</option>
+                                        <option value="CS6105">CS6105</option>
+                                        <option value="ENGL6403">ENGL6403</option>
+                                        <option value="PDEV111">PDEV111</option>
+                                        <option value="GE6116">GE6116</option>
+                                        <option value="MAPEH6104">MAPEH6104</option>
+                                        <option value="GE6103">GE6103</option>
+                                        <option value="BAHRM6120">BAHRM6120</option>
+                                        <option value="MBA103">MBA103</option>
+                                        <option value="RSCH123">RSCH123</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row mt-3">
+                                <div class="col-sm-6 border-right">
+
+
+                                    <h4 class="card-title">Course Content</h4>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">1. As a complete and useful guide for the course, the
+                                            syllabus was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="syllabus"
+                                                    value="{{ i }}" id="syllabus{{ i }}" required>
+                                                <label class="form-check-label" for="syllabus{{ i }}">{{ i }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">2. Relevance of activities and assignments to course
+                                            goals
+                                            was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="course_goals"
+                                                    value="{{ i }}" id="course_goals{{ i }}" required>
+                                                <label class="form-check-label" for="course_goals{{ i }}">{{ i
+                                                    }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">3. Relevance of required readings (websites, articles,
+                                            text, etc.)</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="readings"
+                                                    value="{{ i }}" id="readings{{ i }}" required>
+                                                <label class="form-check-label" for="readings{{ i }}">{{ i }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">4. The effectiveness of the delivery format
+                                            was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="delivery_format"
+                                                    value="{{ i }}" id="delivery{{ i }}" required>
+                                                <label class="form-check-label" for="delivery{{ i }}">{{ i }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">5. Overall, the course content was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="overall_content"
+                                                    value="{{ i }}" id="overall{{ i }}" required>
+                                                <label class="form-check-label" for="overall{{ i }}">{{ i }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">Give us your insights on the course content:</label>
+                                        <textarea class="form-control" name="insights" rows="4" required></textarea>
+                                    </div>
+
+
+
+                                </div>
+
+                                <div class="col-sm-6">
+                                    <h4 class="card-title">Mentorship</h4>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">1. Quality and helpfulness of the mentor feedback
+                                            was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="mentor_feedback"
+                                                    value="{{ i }}" id="mentor_feedback{{ i }}" required>
+                                                <label class="form-check-label" for="mentor_feedback{{ i }}">{{ i
+                                                    }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">2. Timely response by the mentor for inquiries
+                                            was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="mentor_response"
+                                                    value="{{ i }}" id="mentor_response{{ i }}" required>
+                                                <label class="form-check-label" for="mentor_response{{ i }}">{{ i
+                                                    }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">3. Mentor's availability for extra help was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="mentor_availability"
+                                                    value="{{ i }}" id="mentor_availability{{ i }}" required>
+                                                <label class="form-check-label" for="mentor_availability{{ i }}">{{ i
+                                                    }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <div class="ml-3 mb-3">
+                                        <label class="form-label">4. Overall, the mentor was:</label>
+                                        <div class="ml-5 d-flex gap-10">
+                                            {% for i in range(5, 0, -1) %}
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="radio" name="mentor_overall"
+                                                    value="{{ i }}" id="mentor_overall{{ i }}" required>
+                                                <label class="form-check-label" for="mentor_overall{{ i }}">{{ i
+                                                    }}</label>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <p class="card-description m-0 mt-2">Give us your insights about our mentors.</p>
+                                    <textarea class="form-control" name="mentor_feedback_text" rows="4"
+                                        required></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <hr>
+                        <div class="text-center my-3 mx-3">
+                            <button type="submit" class="btn btn-primary mr-2" id="submit-sentiment">Submit</button>
+                            <button class="btn btn-light">Cancel</button>
+                            <br>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+    <script>
+        $(document).ready(function () {
+            $('#submit-sentiment').click(function (e) {
+                e.preventDefault();
+
+                // Collect form data
+                let formData = {
+                    
+                    syllabus: $('input[name="syllabus"]:checked').val(),
+                    course_goals: $('input[name="course_goals"]:checked').val(),
+                    readings: $('input[name="readings"]:checked').val(),
+                    delivery_format: $('input[name="delivery_format"]:checked').val(),
+                    overall_content: $('input[name="overall_content"]:checked').val(),
+                    insights: $('textarea[name="insights"]').val(),
+                    mentor_feedback: $('input[name="mentor_feedback"]:checked').val(),
+                    mentor_response: $('input[name="mentor_response"]:checked').val(),
+                    mentor_availability: $('input[name="mentor_availability"]:checked').val(),
+                    mentor_overall: $('input[name="mentor_overall"]:checked').val(),
+                    mentor_feedback_text: $('textarea[name="mentor_feedback_text"]').val(),
+                    course_code: $('#course_code').val()
+                };
+
+                $.ajax({
+                    url: '/save_feedback',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(formData),
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Feedback Submitted!',
+                                text: response.message,
+                                timer: 3000
+                            });
+
+                            $('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+                            // ✅ Clear all textareas
+                            $('textarea').val('');
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error!',
+                                text: response.message
+                            });
+                        }
+                    },
+                    error: function () {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Submission Failed',
+                            text: 'There was an issue submitting your feedback. Please try again.'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+ 
+    
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+   
+    <script>
+        $(document).ready(function () {
+            $('#course_code').select2({
+                placeholder: "Select courses",
+                allowClear: true,
+                width: 'resolve'
+            });
+        });
+    </script>
+</body>
+
+</html>
