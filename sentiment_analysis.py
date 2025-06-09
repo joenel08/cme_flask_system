@@ -11,8 +11,8 @@ nltk.download('stopwords')
 nltk.download('wordnet')
 
 # ✅ Load the model and TF-IDF vectorizer
-MODEL_PATH = 'model_data/v1_rf_model.pkl'
-VECTORIZER_PATH = 'model_data/v1_tfidf_vectorizer.pkl'
+MODEL_PATH = 'model/v1_rf_model.pkl'
+VECTORIZER_PATH = 'model/v1_tfidf_vectorizer.pkl'
 
 with open(MODEL_PATH, 'rb') as f:
     loaded_ann_model = pickle.load(f)

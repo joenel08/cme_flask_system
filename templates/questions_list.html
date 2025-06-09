@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% include 'partials/_headerLink.html' %}
+
+<style>
+    /* The modal background */
+    .modal {
+        display: none;
+        /* Hidden by default */
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        /* Black w/ opacity */
+    }
+
+    /* Modal content */
+    .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        /* padding: 20px; */
+        border-radius: 6px;
+        width: 400px;
+        position: relative;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Close button */
+    .close-btn {
+        color: #aaa;
+        font-size: 24px;
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        cursor: pointer;
+    }
+
+    .close-btn:hover {
+        color: red;
+    }
+</style>
+
+
+<body>
+    <div class="container-scroller">
+        <!-- partial:partials/_sidebar.html -->
+        {% include 'partials/_sidebar.html' %}
+        <!-- partial -->
+        <div class="container-fluid page-body-wrapper">
+            <!-- partial:partials/_settings-panel.html -->
+
+            <!-- partial -->
+            <!-- partial:partials/_navbar.html -->
+            {% include 'partials/_navbar.html' %}
+            <!-- partial -->
+            <div class="main-panel">
+                <div class="content-wrapper pb-0">
+                    <div class="container mt-5">
+                        <h2 class="text-center m-0 font-weight-bold h3">Manage Questions</h2>
+                        <p class="m-0 text-center mb-4 text-muted">You can add/update or delete questions here</p>
+                        <!-- <a href="/download-csv" class="btn btn-success mb-3 text-right">
+                            <i class="mdi mdi-file-excel"></i> Download CSV
+                        </a> -->
+                        <!-- <button class="btn btn-success mb-3 text-right" id="btnAdd">Add Question</button> -->
+                        <button class="btn btn-success mb-3 text-right" id="openModalBtn">
+                            Add Question
+                        </button>
+
+
+                        <div class="card shadow p-4">
+                            <div class="table-responsive">
+                                <table id="questionsTable" class="table table-bordered text-center">
+                                    <thead class="text-center">
+
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Category</th>
+                                            <th>Question Text</th>
+                                            <th>Actions</th>
+                                        </tr>
+
+                                    </thead>
+                                    <tbody>
+                                        {% for q in questions %}
+                                        <tr data-id="{{ q.q_id }}">
+                                            <td>{{ q.q_id }}</td>
+                                            <td class="cat">{{ q.category }}</td>
+                                            <td class="qtext">{{ q.question_text }}</td>
+                                            <td>
+                                                <button class="btn btn-sm btn-warning btnEdit">Edit</button>
+                                                <button class="btn btn-sm btn-danger btnDelete">Delete</button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- content-wrapper ends -->
+                <!-- partial:partials/_footer.html -->
+                {% include 'partials/_footer.html' %}
+                <!-- partial -->
+            </div>
+            <!-- main-panel ends -->
+        </div>
+        <!-- page-body-wrapper ends -->
+    </div>
+
+
+    <!-- Custom Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+
+
+            <div class="modal-header">
+                <h2 id="modalTitle">Add New Question</h2>
+                <span class="close-btn">&times;</span>
+            </div>
+
+            <div class="modal-body">
+                <form id="questionForm">
+                    <!-- Hidden for edit -->
+                    <input type="hidden" id="questionId">
+
+                    <div class="form-group">
+                        <label>Category:</label>
+                        <select name="category" class="form-control" id="category" required>
+                            <option value="">-- Select Category --</option>
+                            <option value="Course Content">Course Content</option>
+                            <option value="Mentorship">Mentorship</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Question:</label>
+                        <input class="form-control" type="text" id="question_text" required>
+                    </div>
+
+                    <button class="btn btn-success" type="submit" id="btnSave">Save</button>
+                </form>
+            </div>
+
+
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            $('#questionsTable').DataTable();
+
+        });
+        // ✅ Function to refresh both ratio and table
+
+    </script>
+    <script>
+        const modal = document.getElementById("myModal");
+        const openBtn = document.getElementById("openModalBtn");
+        const closeBtn = document.querySelector(".close-btn");
+        const form = document.getElementById("questionForm");
+        const modalTitle = document.getElementById("modalTitle");
+
+        // 🟩 OPEN modal for ADD
+        openBtn.onclick = function () {
+            modal.style.display = "block";
+            modalTitle.innerText = "Add New Question";
+            form.reset();
+            document.getElementById("questionId").value = '';
+        };
+
+        // 🟥 CLOSE modal
+        closeBtn.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // 🟧 Close modal when clicking outside
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+
+        // 🟨 Handle SAVE (Add or Edit)
+        form.onsubmit = function (e) {
+            e.preventDefault();
+
+            const data = {
+                id: document.getElementById("questionId").value,
+                category: document.getElementById("category").value,
+                question_text: document.getElementById("question_text").value
+            };
+
+            $.ajax({
+                url: '/questions/save',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function (res) {
+                    if (res.success) {
+                        location.reload(); // Or update row dynamically
+                    } else {
+                        alert('Failed to save question');
+                    }
+                }
+            });
+        };
+
+        // 🟦 Handle Edit
+        $('#questionsTable').on('click', '.btnEdit', function () {
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+            const category = row.find('.cat').text();
+            const qtext = row.find('.qtext').text();
+
+            $('#questionId').val(id);
+            $('#category').val(category);
+            $('#question_text').val(qtext);
+
+            modalTitle.innerText = "Edit Question";
+            modal.style.display = "block";
+        });
+
+        // 🟥 Handle Delete
+        $('#questionsTable').on('click', '.btnDelete', function () {
+            if (!confirm('Are you sure you want to delete this question?')) return;
+
+            const row = $(this).closest('tr');
+            const id = row.data('id');
+
+            $.ajax({
+                url: '/questions/delete/' + id,
+                type: 'DELETE',
+                success: function (res) {
+                    if (res.success) {
+                        row.remove();
+                    } else {
+                        alert('Failed to delete');
+                    }
+                }
+            });
+        });
+    </script>
+
+
+
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <!-- Vendor JS -->
+    <!-- <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script> -->
+    <!-- endinject -->
+
+    <!-- Plugin JS for this page -->
+    <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.resize.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
+    <!-- End plugin JS for this page -->
+
+    <!-- Injected JS -->
+    <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
+    <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
+    <!-- endinject -->
+
+    <!-- Custom JS for this page -->
+    <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
+
+    <!-- End custom js for this page -->
+</body>
+
+</html>

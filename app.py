@@ -484,9 +484,25 @@ def logout():
     session.clear()
     return redirect(url_for("login"))
 
-@app.route("/user_form")
+# @app.route("/user_form")
+# def user_form():
+#     return render_template("user_form.html")
+
+@app.route('/user_form')
 def user_form():
-    return render_template("user_form.html")
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT q_id, category, question_text FROM questions WHERE category IN ('Course Content', 'Mentorship')")
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    # Group questions by category name (text)
+    questions_by_category = {'Course Content': [], 'Mentorship': []}
+    for row in rows:
+        questions_by_category[row['category']].append(row)
+
+    return render_template('user_form.html', questions_by_category=questions_by_category)
 
 # Save form data route
 @app.route('/save_feedback', methods=['POST'])
@@ -494,35 +510,32 @@ def save_feedback():
     try:
         data = request.json
 
-        # Extract form data
-        course_code = data['course_code']
-        syllabus = data['syllabus']
-        course_goals = data['course_goals']
-        readings = data['readings']
-        delivery_format = data['delivery_format']
-        overall_content = data['overall_content']
-        insights = data['insights']
-        mentor_feedback = data['mentor_feedback']
-        mentor_response = data['mentor_response']
-        mentor_availability = data['mentor_availability']
-        mentor_overall = data['mentor_overall']
-        mentor_feedback_text = data['mentor_feedback_text']
+        course_code = data.get('course_code')
+        insights = data.get('insights')
+        mentor_feedback_text = data.get('mentor_feedback_text')
 
-        # Insert data into MySQL
+        # Connect to DB
         conn = get_db_connection()
         cursor = conn.cursor()
-        # cursor = mysql.connection.cursor()
-        query = """
-        INSERT INTO user_feedback (course_code,syllabus, course_goals, readings, delivery_format, overall_content, insights,
-            mentor_feedback, mentor_response, mentor_availability, mentor_overall, mentor_feedback_text
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(query, (course_code,syllabus, course_goals, readings, delivery_format, overall_content, insights,
-            mentor_feedback, mentor_response, mentor_availability, mentor_overall, mentor_feedback_text
-        ))
-        
-        conn.commit()
 
+        # Insert main feedback info (course code + text feedback)
+        cursor.execute(
+            "INSERT INTO user_feedback (course_code, insights, mentor_feedback_text) VALUES (%s, %s, %s)",
+            (course_code, insights, mentor_feedback_text)
+        )
+        feedback_id = cursor.lastrowid
+
+        # Now save each question answer
+        for key, value in data.items():
+            if key.startswith('question_'):
+                question_id = int(key.split('_')[1])  # get q_id from key 'question_123'
+                answer = int(value)
+                cursor.execute(
+                    "INSERT INTO user_feedback_answers (feedback_id, question_id, answer) VALUES (%s, %s, %s)",
+                    (feedback_id, question_id, answer)
+                )
+
+        conn.commit()
         cursor.close()
         conn.close()
 
@@ -530,6 +543,7 @@ def save_feedback():
 
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)})
+
 
 @app.route("/feedback")
 def feedback():
@@ -684,6 +698,53 @@ def download_csv():
         mimetype="text/csv",
         headers={"Content-Disposition": "attachment;filename=feedback_data.csv"}
     )
+
+@app.route('/questions')
+def questions():
+
+    
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM questions ORDER BY category, q_id")
+    questions = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('questions_list.html', questions=questions)
+@app.route('/questions/save', methods=['POST'])
+def save_question():
+    data = request.json
+    qid = data.get('id')
+    category = data['category']
+    question_text = data['question_text']
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if qid:  # Update existing
+        cursor.execute("UPDATE questions SET category=%s, question_text=%s WHERE q_id=%s",
+                       (category, question_text, qid))
+    else:  # Insert new
+        cursor.execute("INSERT INTO questions (category, question_text) VALUES (%s, %s)",
+                       (category, question_text))
+        qid = cursor.lastrowid
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return jsonify({'success': True, 'q_id': qid})
+
+@app.route('/questions/delete/<int:qid>', methods=['DELETE'])
+def delete_question(qid):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM questions WHERE q_id=%s", (qid,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify({'success': True})
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

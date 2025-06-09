@@ -66,15 +66,16 @@
     }
 
     .select2-container {
-            width: 50% !important;
-        }
+        width: 50% !important;
+    }
 
-        .select2-container--default .select2-selection--single {
-    height: 38px !important;   /* Match your input height */
-    display: flex !important;  
-    align-items: center !important;  
-    line-height: normal !important;
-}
+    .select2-container--default .select2-selection--single {
+        height: 38px !important;
+        /* Match your input height */
+        display: flex !important;
+        align-items: center !important;
+        line-height: normal !important;
+    }
 </style>
 
 <body>
@@ -177,77 +178,22 @@
 
                                     <h4 class="card-title">Course Content</h4>
 
+
+
+                                    {% for question in questions_by_category['Course Content'] %}
                                     <div class="ml-3 mb-3">
-                                        <label class="form-label">1. As a complete and useful guide for the course, the
-                                            syllabus was:</label>
+                                        <label class="form-label">{{ loop.index }}. {{ question.question_text }}</label>
                                         <div class="ml-5 d-flex gap-10">
                                             {% for i in range(5, 0, -1) %}
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="syllabus"
-                                                    value="{{ i }}" id="syllabus{{ i }}" required>
-                                                <label class="form-check-label" for="syllabus{{ i }}">{{ i }}</label>
+                                                <input class="form-check-input" type="radio"
+                                                    name="question_{{ question.q_id }}" value="{{ i }}" required>
+                                                <label class="form-check-label">{{ i }}</label>
                                             </div>
                                             {% endfor %}
                                         </div>
                                     </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">2. Relevance of activities and assignments to course
-                                            goals
-                                            was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="course_goals"
-                                                    value="{{ i }}" id="course_goals{{ i }}" required>
-                                                <label class="form-check-label" for="course_goals{{ i }}">{{ i
-                                                    }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">3. Relevance of required readings (websites, articles,
-                                            text, etc.)</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="readings"
-                                                    value="{{ i }}" id="readings{{ i }}" required>
-                                                <label class="form-check-label" for="readings{{ i }}">{{ i }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">4. The effectiveness of the delivery format
-                                            was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="delivery_format"
-                                                    value="{{ i }}" id="delivery{{ i }}" required>
-                                                <label class="form-check-label" for="delivery{{ i }}">{{ i }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">5. Overall, the course content was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="overall_content"
-                                                    value="{{ i }}" id="overall{{ i }}" required>
-                                                <label class="form-check-label" for="overall{{ i }}">{{ i }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
+                                    {% endfor %}
                                     <div class="ml-3 mb-3">
                                         <label class="form-label">Give us your insights on the course content:</label>
                                         <textarea class="form-control" name="insights" rows="4" required></textarea>
@@ -260,64 +206,20 @@
                                 <div class="col-sm-6">
                                     <h4 class="card-title">Mentorship</h4>
 
+                                    {% for question in questions_by_category['Mentorship'] %}
                                     <div class="ml-3 mb-3">
-                                        <label class="form-label">1. Quality and helpfulness of the mentor feedback
-                                            was:</label>
+                                        <label class="form-label">{{ loop.index }}. {{ question.question_text }}</label>
                                         <div class="ml-5 d-flex gap-10">
                                             {% for i in range(5, 0, -1) %}
                                             <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="mentor_feedback"
-                                                    value="{{ i }}" id="mentor_feedback{{ i }}" required>
-                                                <label class="form-check-label" for="mentor_feedback{{ i }}">{{ i
-                                                    }}</label>
+                                                <input class="form-check-input" type="radio"
+                                                    name="question_{{ question.q_id }}" value="{{ i }}" required>
+                                                <label class="form-check-label">{{ i }}</label>
                                             </div>
                                             {% endfor %}
                                         </div>
                                     </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">2. Timely response by the mentor for inquiries
-                                            was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="mentor_response"
-                                                    value="{{ i }}" id="mentor_response{{ i }}" required>
-                                                <label class="form-check-label" for="mentor_response{{ i }}">{{ i
-                                                    }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">3. Mentor's availability for extra help was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="mentor_availability"
-                                                    value="{{ i }}" id="mentor_availability{{ i }}" required>
-                                                <label class="form-check-label" for="mentor_availability{{ i }}">{{ i
-                                                    }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
-                                    <div class="ml-3 mb-3">
-                                        <label class="form-label">4. Overall, the mentor was:</label>
-                                        <div class="ml-5 d-flex gap-10">
-                                            {% for i in range(5, 0, -1) %}
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="radio" name="mentor_overall"
-                                                    value="{{ i }}" id="mentor_overall{{ i }}" required>
-                                                <label class="form-check-label" for="mentor_overall{{ i }}">{{ i
-                                                    }}</label>
-                                            </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-
+                                    {% endfor %}
                                     <p class="card-description m-0 mt-2">Give us your insights about our mentors.</p>
                                     <textarea class="form-control" name="mentor_feedback_text" rows="4"
                                         required></textarea>
@@ -340,14 +242,14 @@
     </div>
 
 
-    <script>
+    <!-- <script>
         $(document).ready(function () {
             $('#submit-sentiment').click(function (e) {
                 e.preventDefault();
 
                 // Collect form data
                 let formData = {
-                    
+
                     syllabus: $('input[name="syllabus"]:checked').val(),
                     course_goals: $('input[name="course_goals"]:checked').val(),
                     readings: $('input[name="readings"]:checked').val(),
@@ -397,9 +299,61 @@
                 });
             });
         });
+    </script> -->
+    <script>
+        $('#submit-sentiment').click(function (e) {
+            e.preventDefault();
+
+            // Collect all form inputs dynamically
+            let formData = {};
+            // Get the selected course code
+            formData.course_code = $('#course_code').val();
+
+            // Collect all question radio inputs by their name attribute
+            $('input[type="radio"]:checked').each(function () {
+                formData[$(this).attr('name')] = $(this).val();
+            });
+
+            // Collect all textareas (for insights, mentor_feedback_text, etc.)
+            $('textarea').each(function () {
+                formData[$(this).attr('name')] = $(this).val();
+            });
+
+            $.ajax({
+                url: '/save_feedback',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function (response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Feedback Submitted!',
+                            text: response.message,
+                            timer: 3000
+                        });
+                        $('input[type="checkbox"], input[type="radio"]').prop('checked', false);
+                        $('textarea').val('');
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error!',
+                            text: response.message
+                        });
+                    }
+                },
+                error: function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Submission Failed',
+                        text: 'There was an issue submitting your feedback. Please try again.'
+                    });
+                }
+            });
+        });
+
     </script>
- 
-    
+
     <!-- container-scroller -->
     <!-- plugins:js -->
     <!-- Vendor JS -->
@@ -427,7 +381,7 @@
     <!-- Custom JS for this page -->
     <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
 
-   
+
     <script>
         $(document).ready(function () {
             $('#course_code').select2({
