@@ -22,58 +22,47 @@
                 <div class="content-wrapper pb-0">
                     <div class="container mt-5">
                         <h2 class="text-center m-0 font-weight-bold h3">User Feedback Data</h2>
-                        <p class="m-0 text-center mb-4 text-muted">The following data shown are based on the inputted data of users</p>
+                        <p class="m-0 text-center mb-4 text-muted">The following data shown are based on the inputted
+                            data of users</p>
                         <a href="/download-csv" class="btn btn-success mb-3 text-right">
                             <i class="mdi mdi-file-excel"></i> Download CSV
                         </a>
                         <div class="card shadow p-4">
-                           <div class="table-responsive">
-                            <table id="feedbackTable" class="table table-bordered text-center">
-                                <thead class="text-center">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Course Code</th>
-                                        <th>Syllabus</th>
-                                        <th>Course Goals</th>
-                                        <th>Readings</th>
-                                        <th>Delivery Format</th>
-                                        <th>Overall Content</th>
-                                        <th>Insights</th>
-                                        <th>Mentor Feedback</th>
-                                        <th>Mentor Response</th>
-                                        <th>Mentor Availability</th>
-                                        <th>Mentor Overall</th>
-                                        <th>Mentor Feedback Text</th>
-                                        <th>Created At</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for row in data %}
-                                    <tr>
-                                        <td>{{ row[0] }}</td> <!-- ID -->
-                                        <td>{{ row[1] }}</td> <!-- Course code -->
+                            <div class="table-responsive">
+                                <table id="feedbackTable" class="table table-bordered text-center">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Course Code</th>
+                                            {% for question in questions %}
+                                            <th>{{ question.question_text }}</th>
+                                            {% endfor %}
+                                            <th>Insights</th>
+                                            <th>Mentor Feedback Text</th>
+                                            <th>Created At</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in data %}
+                                        <tr>
+                                            <td>{{ row.id }}</td>
+                                            <td>{{ row.course_code }}</td>
+                                            {% for answer in row.answers %}
+                                            <td>{{ answer }}</td>
+                                            {% endfor %}
+                                            <td>{{ row.insights }}</td>
+                                            <td>{{ row.mentor_feedback_text }}</td>
+                                            <td>{{ row.created_at }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
 
-                                        <td>{{ row[2] }}</td> <!-- Syllabus -->
-                                        <td>{{ row[3] }}</td> <!-- Course Goals -->
-                                        <td>{{ row[4] }}</td> <!-- Readings -->
-                                        <td>{{ row[5] }}</td> <!-- Delivery Format -->
-                                        <td>{{ row[6] }}</td> <!-- Overall Content -->
-                                        <td>{{ row[7] }}</td> <!-- Insights -->
-                                        <td>{{ row[8] }}</td> <!-- Mentor Feedback -->
-                                        <td>{{ row[9] }}</td> <!-- Mentor Response -->
-                                        <td>{{ row[10] }}</td> <!-- Mentor Availability -->
-                                        <td>{{ row[11] }}</td> <!-- Mentor Overall -->
-                                        <td>{{ row[12] }}</td> <!-- Mentor Feedback Text -->
-                                        <td>{{ row[13] }}</td> <!-- Created At -->
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                           </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- content-wrapper ends -->
                 <!-- partial:partials/_footer.html -->
                 {% include 'partials/_footer.html' %}

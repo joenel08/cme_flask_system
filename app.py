@@ -545,48 +545,122 @@ def save_feedback():
         return jsonify({'status': 'error', 'message': str(e)})
 
 
+# @app.route("/feedback")
+# def feedback():
+#     if "user_id" not in session:
+#             return redirect(url_for("login"))
+
+#     email = session.get("email", "Guest")
+#     fullname = session.get("fullname", "Guest")
+        
+    
+#     # Connect to MySQL
+#     conn = get_db_connection()
+#     cursor = conn.cursor()
+
+#     # SQL query to fetch all fields from user_feedback
+#     cursor.execute("""
+#         SELECT 
+#             id, 
+#             course_code,
+#             syllabus, 
+#             course_goals, 
+#             readings, 
+#             delivery_format, 
+#             overall_content, 
+#             insights, 
+#             mentor_feedback, 
+#             mentor_response, 
+#             mentor_availability, 
+#             mentor_overall, 
+#             mentor_feedback_text, 
+#             created_at 
+#         FROM user_feedback
+#         ORDER BY created_at DESC
+#     """)
+    
+#     data = cursor.fetchall()
+    
+#     cursor.close()
+#     conn.close()
+
+#     # Render data in the HTML table
+#     return render_template("edit_feedback.html",data=data, email=email,
+#             fullname=fullname,)
+
 @app.route("/feedback")
 def feedback():
     if "user_id" not in session:
-            return redirect(url_for("login"))
+        return redirect(url_for("login"))
 
     email = session.get("email", "Guest")
     fullname = session.get("fullname", "Guest")
-        
-    
-    # Connect to MySQL
-    conn = get_db_connection()
-    cursor = conn.cursor()
 
-    # SQL query to fetch all fields from user_feedback
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Fetch all questions
+    cursor.execute("SELECT q_id, question_text FROM questions ORDER BY q_id")
+    questions = cursor.fetchall()
+
+    # Fetch feedback entries
     cursor.execute("""
         SELECT 
-            id, 
-            course_code,
-            syllabus, 
-            course_goals, 
-            readings, 
-            delivery_format, 
-            overall_content, 
-            insights, 
-            mentor_feedback, 
-            mentor_response, 
-            mentor_availability, 
-            mentor_overall, 
-            mentor_feedback_text, 
-            created_at 
-        FROM user_feedback
-        ORDER BY created_at DESC
+            uf.id AS feedback_id,
+            uf.course_code,
+            uf.insights,
+            uf.mentor_feedback_text,
+            uf.created_at
+        FROM user_feedback uf
+        ORDER BY uf.created_at DESC
     """)
-    
-    data = cursor.fetchall()
-    
+    feedbacks = cursor.fetchall()
+
+    # Fetch all answers (we'll match them later)
+    cursor.execute("""
+        SELECT feedback_id, question_id, answer
+        FROM user_feedback_answers
+    """)
+    all_answers = cursor.fetchall()
+
+    # Organize answers per feedback
+    answers_by_feedback = {}
+    for ans in all_answers:
+        fid = ans['feedback_id']
+        if fid not in answers_by_feedback:
+            answers_by_feedback[fid] = {}
+        answers_by_feedback[fid][ans['question_id']] = ans['answer']
+
+    # Combine feedback + answers
+    feedback_data = []
+    for fb in feedbacks:
+        row = {
+            "id": fb["feedback_id"],
+            "course_code": fb["course_code"],
+            "insights": fb["insights"],
+            "mentor_feedback_text": fb["mentor_feedback_text"],
+            "created_at": fb["created_at"],
+            "answers": []
+        }
+
+        for q in questions:
+            q_id = q["q_id"]
+            row["answers"].append(answers_by_feedback.get(fb["feedback_id"], {}).get(q_id, "N/A"))
+        
+        feedback_data.append(row)
+
     cursor.close()
     conn.close()
 
-    # Render data in the HTML table
-    return render_template("edit_feedback.html",data=data, email=email,
-            fullname=fullname,)
+    return render_template(
+        "edit_feedback.html",
+        data=feedback_data,
+        questions=questions,
+        email=email,
+        fullname=fullname,
+    )
+
+
     
 # Load data
 # Load your CSV file
