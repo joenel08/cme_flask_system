@@ -545,49 +545,6 @@ def save_feedback():
         return jsonify({'status': 'error', 'message': str(e)})
 
 
-# @app.route("/feedback")
-# def feedback():
-#     if "user_id" not in session:
-#             return redirect(url_for("login"))
-
-#     email = session.get("email", "Guest")
-#     fullname = session.get("fullname", "Guest")
-        
-    
-#     # Connect to MySQL
-#     conn = get_db_connection()
-#     cursor = conn.cursor()
-
-#     # SQL query to fetch all fields from user_feedback
-#     cursor.execute("""
-#         SELECT 
-#             id, 
-#             course_code,
-#             syllabus, 
-#             course_goals, 
-#             readings, 
-#             delivery_format, 
-#             overall_content, 
-#             insights, 
-#             mentor_feedback, 
-#             mentor_response, 
-#             mentor_availability, 
-#             mentor_overall, 
-#             mentor_feedback_text, 
-#             created_at 
-#         FROM user_feedback
-#         ORDER BY created_at DESC
-#     """)
-    
-#     data = cursor.fetchall()
-    
-#     cursor.close()
-#     conn.close()
-
-#     # Render data in the HTML table
-#     return render_template("edit_feedback.html",data=data, email=email,
-#             fullname=fullname,)
-
 @app.route("/feedback")
 def feedback():
     if "user_id" not in session:
@@ -661,7 +618,92 @@ def feedback():
     )
 
 
-    
+   
+#admin users
+@app.route("/admin-users")
+def admin_users():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+
+    email = session.get("email", "Guest")
+    fullname = session.get("fullname", "Guest")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Fetch all admin users (assuming userType = 1 means admin)
+    cursor.execute("""
+        SELECT id, firstname, lastname, email, avatar, date_created
+        FROM users
+        ORDER BY date_created DESC
+    """)
+    admin_users = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return render_template(
+        "admin_users.html",
+        admin_users=admin_users,
+        email=email,
+        fullname=fullname
+    )
+
+
+@app.route("/admin-users/save", methods=["POST"])
+def save_admin_user():
+    if "user_id" not in session:
+        return jsonify(success=False, error="Unauthorized"), 403
+
+    data = request.get_json()
+
+    user_id = data.get("id")
+    firstname = data.get("firstname")
+    lastname = data.get("lastname")
+    email = data.get("email")
+    password = data.get("password")  # Only hashed if new or updated
+    hashed_password = hashlib.md5(password.encode()).hexdigest()
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    if user_id:  # UPDATE
+        if password:
+            cursor.execute("""
+                UPDATE users SET firstname=%s, lastname=%s, email=%s, password=SHA2(%s, 256)
+                WHERE id=%s 
+            """, (firstname, lastname, email, password, user_id))
+        else:
+            cursor.execute("""
+                UPDATE users SET firstname=%s, lastname=%s, email=%s
+                WHERE id=%s
+            """, (firstname, lastname, email, user_id))
+    else:  # ADD
+        cursor.execute("""
+            INSERT INTO users (firstname, lastname, email, password, date_created)
+            VALUES (%s, %s, %s, %s, 1, NOW())
+        """, (firstname, lastname, email, hashed_password))
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(success=True)
+
+@app.route("/admin-users/delete/<int:user_id>", methods=["DELETE"])
+def delete_admin_user(user_id):
+    if "user_id" not in session:
+        return jsonify(success=False, error="Unauthorized"), 403
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    conn.commit()
+    cursor.close()
+    conn.close()
+    return jsonify(success=True)
+
+#end_users
+ 
 # Load data
 # Load your CSV file
 CMEdata = "excel_files/CME_DATA.csv"  
