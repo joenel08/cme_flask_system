@@ -1,6 +1,84 @@
+# import pickle
+# import re
+# import nltk
+# from nltk.tokenize import word_tokenize
+# from nltk.corpus import stopwords
+# from nltk.stem import WordNetLemmatizer
+
+# # ✅ Download NLTK resources
+# nltk.download('punkt')
+# nltk.download('stopwords')
+# nltk.download('wordnet')
+
+# # ✅ Load the model and TF-IDF vectorizer
+# # MODEL_PATH = 'model/v1_rf_model.pkl'
+# MODEL_PATH = "https://drive.google.com/uc?export=download&id=1ZN05zFYNHKVZKTN0sWDlq-PcPb98m2qd"
+# VECTORIZER_PATH = "https://drive.google.com/uc?export=download&id=1ZLQT6vC2WebqFnVleF6Gr6jjVPOTGG96"
+
+
+# with open(MODEL_PATH, 'rb') as f:
+#     loaded_ann_model = pickle.load(f)
+
+# with open(VECTORIZER_PATH, 'rb') as f:
+#     loaded_tfidf_vectorizer = pickle.load(f)
+
+# # ✅ Text Cleaning Functions
+# def remove_noise(text):
+#     """Remove special characters and punctuation."""
+#     text = re.sub(r"[^\w\s]", "", text)
+#     return text
+
+# def standardize(text):
+#     """Convert text to lowercase."""
+#     return text.lower()
+
+# def tokenize(text):
+#     """Tokenize the text."""
+#     tokens = word_tokenize(text)
+#     return tokens
+
+# def linguistic_processing(tokens):
+#     """Lemmatize tokens and remove stopwords."""
+#     lemmatizer = WordNetLemmatizer()
+#     tokens = [lemmatizer.lemmatize(token) for token in tokens]
+
+#     stop_words = set(stopwords.words('english'))
+#     tokens = [token for token in tokens if token not in stop_words]
+
+#     return tokens
+
+# def preprocess_text(text):
+#     """Combine all preprocessing steps into a pipeline."""
+#     text = standardize(text)
+#     text = remove_noise(text)
+#     tokens = tokenize(text)
+#     tokens = linguistic_processing(tokens)
+#     return ' '.join(tokens)
+
+# # ✅ Sentiment Prediction Function
+# def predict_sentiment_label_ann(input_text, model, vectorizer):
+#     """
+#     Predict sentiment using the pre-trained ANN model.
+#     """
+#     # Preprocess the input text
+#     preprocessed_text = preprocess_text(input_text)
+
+#     # Vectorize the preprocessed text
+#     input_text_tfidf = vectorizer.transform([preprocessed_text])
+
+#     # Perform prediction
+#     numeric_prediction = model.predict(input_text_tfidf)[0]
+
+#     # Map prediction to labels
+#     sentiment_labels = {1: 'Positive', 0: 'Negative', 2: 'Neutral'}
+#     return sentiment_labels.get(numeric_prediction, 'Unknown')
+
+
 import pickle
 import re
 import nltk
+import requests
+import io
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
@@ -10,64 +88,48 @@ nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-# ✅ Load the model and TF-IDF vectorizer
-MODEL_PATH = 'model/v1_rf_model.pkl'
-VECTORIZER_PATH = 'model/v1_tfidf_vectorizer.pkl'
+# ✅ Direct download URLs (Google Drive)
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1ZN05zFYNHKVZKTN0sWDlq-PcPb98m2qd"
+VECTORIZER_URL = "https://drive.google.com/uc?export=download&id=1ZLQT6vC2WebqFnVleF6Gr6jjVPOTGG96"
 
-with open(MODEL_PATH, 'rb') as f:
-    loaded_ann_model = pickle.load(f)
+# ✅ Load model from Google Drive
+model_response = requests.get(MODEL_URL)
+loaded_ann_model = pickle.load(io.BytesIO(model_response.content))
 
-with open(VECTORIZER_PATH, 'rb') as f:
-    loaded_tfidf_vectorizer = pickle.load(f)
+# ✅ Load vectorizer from Google Drive
+vectorizer_response = requests.get(VECTORIZER_URL)
+loaded_tfidf_vectorizer = pickle.load(io.BytesIO(vectorizer_response.content))
 
 # ✅ Text Cleaning Functions
 def remove_noise(text):
-    """Remove special characters and punctuation."""
     text = re.sub(r"[^\w\s]", "", text)
     return text
 
 def standardize(text):
-    """Convert text to lowercase."""
     return text.lower()
 
 def tokenize(text):
-    """Tokenize the text."""
-    tokens = word_tokenize(text)
-    return tokens
+    return word_tokenize(text)
 
 def linguistic_processing(tokens):
-    """Lemmatize tokens and remove stopwords."""
     lemmatizer = WordNetLemmatizer()
     tokens = [lemmatizer.lemmatize(token) for token in tokens]
-
     stop_words = set(stopwords.words('english'))
     tokens = [token for token in tokens if token not in stop_words]
-
     return tokens
 
 def preprocess_text(text):
-    """Combine all preprocessing steps into a pipeline."""
     text = standardize(text)
     text = remove_noise(text)
     tokens = tokenize(text)
     tokens = linguistic_processing(tokens)
     return ' '.join(tokens)
 
-# ✅ Sentiment Prediction Function
+# ✅ Prediction Function
 def predict_sentiment_label_ann(input_text, model, vectorizer):
-    """
-    Predict sentiment using the pre-trained ANN model.
-    """
-    # Preprocess the input text
     preprocessed_text = preprocess_text(input_text)
-
-    # Vectorize the preprocessed text
     input_text_tfidf = vectorizer.transform([preprocessed_text])
-
-    # Perform prediction
     numeric_prediction = model.predict(input_text_tfidf)[0]
-
-    # Map prediction to labels
     sentiment_labels = {1: 'Positive', 0: 'Negative', 2: 'Neutral'}
     return sentiment_labels.get(numeric_prediction, 'Unknown')
 
