@@ -27,6 +27,7 @@ import pyLDAvis.lda_model
 import joblib
 from scipy.sparse import hstack, csr_matrix
 
+
 from datetime import datetime
 
 from flask_cors import CORS
@@ -36,12 +37,90 @@ from sentiment_analysis import predict_sentiment_label_ann, loaded_ann_model, lo
 import pymysql
 
 
+
+import spacy
+from collections import Counter
+from nltk.sentiment import SentimentIntensityAnalyzer
+
+nltk.download('vader_lexicon')
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = "secret123"
 
 # Load CSV file
-df = pd.read_csv('excel_files/VOC_DATA.csv', encoding='latin1')
+# df = pd.read_csv('excel_files/VOC_DATA.csv', encoding='latin1')
+
+#for VOC
+# Load data
+df = pd.read_csv('excel_files/VOC_final_engv1.csv', encoding='latin1')
+
+# Drop empty values
+df = df.dropna(subset=['Feedback'])
+df = df[df['Feedback'].str.strip() != '']
+
+# NLP models
+nlp = spacy.load("en_core_web_sm")
+sia = SentimentIntensityAnalyzer()
+
+# Domain stopwords
+domain_stop = {"course", "module", "student", "lesson", "video", "have",
+               "subject", "topic", "content", "so", "far", "start", "stop"}
+
+# Stop ngrams and banned phrases
+stop_ngrams = {"continue do", "keep do", "just continue"}
+banned_phrases = {
+    "Positive": set(),
+    "Negative": set(),
+    "Neutral": set()
+}
+
+# -------------------------
+# Token filtering
+# -------------------------
+def filter_sentiment_tokens(text, sentiment):
+    doc = nlp(str(text))
+    tokens = []
+    for token in doc:
+        if token.pos_ in {"ADJ", "ADV", "VERB"} and token.text.lower() not in domain_stop:
+            lemma = token.lemma_.lower()
+            if lemma in banned_phrases.get(sentiment, set()):
+                continue
+            polarity = sia.polarity_scores(lemma)["compound"]
+            if sentiment == "Positive" and polarity > 0:
+                tokens.append(lemma)
+            elif sentiment == "Negative" and polarity < 0:
+                tokens.append(lemma)
+            elif sentiment == "Neutral" and polarity == 0:
+                tokens.append(lemma)
+    return tokens
+
+# -------------------------
+# N-gram extraction
+# -------------------------
+def extract_ngrams(tokens, sentiment, ngram_range=(2, 3), top_n=50):
+    ngrams = []
+    for n in range(ngram_range[0], ngram_range[1] + 1):
+        ngrams.extend([" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)])
+    freq = Counter(ngrams)
+    cleaned = {k: v for k, v in freq.items() if len(set(k.split())) > 1}
+    banned = banned_phrases.get(sentiment, set())
+    cleaned = {k: v for k, v in cleaned.items() if k not in banned}
+    cleaned = {k.replace(" ", "_"): v for k, v in cleaned.items()}
+    return dict(Counter(cleaned).most_common(top_n))
+
+# -------------------------
+# Word coloring
+# -------------------------
+def color_func(word, font_size, position, orientation, random_state=None, **kwargs):
+    if "_" in word:  # n-grams
+        return "darkred"
+    else:
+        return "navy"
+
+
+#end for VOC
+
 df_cme = pd.read_csv('excel_files/CME_DATA.csv', encoding='latin1')
 
 
@@ -183,23 +262,61 @@ def voc():
     return render_template("voc.html", email=email, fullname=fullname)
 
 @app.route('/api/wordclouds')
-def wordclouds_by_category():
-    categories = df['Category'].unique()
+def wordclouds_by_department_and_sentiment():
+    dept_filter = request.args.get("department")  # <-- get department from query param
+
+    grouped_feedback = df.groupby(["Department", "Sentiment Label"])["Feedback"].apply(
+        lambda texts: " ".join(texts.astype(str))
+    ).reset_index()
+
+    if dept_filter:
+        grouped_feedback = grouped_feedback[grouped_feedback["Department"] == dept_filter]
+
+    departments = grouped_feedback["Department"].unique()
+    sentiments = grouped_feedback["Sentiment Label"].unique()
+
     wordclouds = {}
-    
-    for category in categories:
-        text = ' '.join(df[df['Category'] == category]['Feedback'])
-        wordcloud = WordCloud(width=1200, height=400, background_color='white').generate(text)
-        img = io.BytesIO()
-        plt.figure(figsize=(10, 4))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis("off")
-        plt.savefig(img, format='png', bbox_inches='tight')
-        plt.close()
-        img.seek(0)
-        wordclouds[category] = base64.b64encode(img.getvalue()).decode()
-    
+
+    for dept in departments:
+        for sentiment in sentiments:
+            text = grouped_feedback[
+                (grouped_feedback["Department"] == dept) &
+                (grouped_feedback["Sentiment Label"] == sentiment)
+            ]["Feedback"]
+
+            if not text.empty:
+                tokens = filter_sentiment_tokens(text.values[0], sentiment)
+                if tokens:
+                    word_freq = Counter(tokens)
+                    ngram_freq = extract_ngrams(tokens, sentiment, ngram_range=(2, 3), top_n=50)
+                    combined_freq = word_freq + Counter(ngram_freq)
+
+                    if combined_freq:
+                        wc = WordCloud(
+                            width=800, height=400,
+                            background_color="white", max_words=5000
+                        ).generate_from_frequencies(combined_freq)
+
+                        img = io.BytesIO()
+                        plt.figure(figsize=(8, 4))
+                        plt.imshow(wc.recolor(color_func=color_func), interpolation="bilinear")
+                        plt.axis("off")
+                        plt.title(f"{dept} - {sentiment}", fontsize=12)
+                        plt.savefig(img, format="png", bbox_inches="tight")
+                        plt.close()
+                        img.seek(0)
+
+                        key = f"{dept} - {sentiment}"
+                        wordclouds[key] = base64.b64encode(img.getvalue()).decode()
+                    else:
+                        wordclouds[f"{dept} - {sentiment}"] = None
+                else:
+                    wordclouds[f"{dept} - {sentiment}"] = None
+            else:
+                wordclouds[f"{dept} - {sentiment}"] = None
+
     return jsonify(wordclouds)
+
 
 
 @app.route('/api/sentiment_category')
@@ -256,41 +373,41 @@ lda_vis_html = None
 # ================================
 # LDA PAGE
 # ================================\
-@app.route("/lda_visualization")
-def lda_visualization():
-    # Load the CSV file
-    file_path = 'excel_files/final_data_AMA.csv'  # Make sure the file is in the same directory
-    data = pd.read_csv(file_path)
+# @app.route("/lda_visualization")
+# def lda_visualization():
+#     # Load the CSV file
+#     file_path = 'excel_files/final_data_AMA.csv'  # Make sure the file is in the same directory
+#     data = pd.read_csv(file_path)
 
-    # Preprocessing
-    if 'Cleaned Feedback' not in data.columns:
-        return "Column 'Cleaned Feedback' not found in CSV file."
+#     # Preprocessing
+#     if 'Cleaned Feedback' not in data.columns:
+#         return "Column 'Cleaned Feedback' not found in CSV file."
 
-    data['Cleaned Feedback'].dropna(inplace=True)
-    data['Cleaned Feedback'] = data['Cleaned Feedback'].astype(str)
+#     data['Cleaned Feedback'].dropna(inplace=True)
+#     data['Cleaned Feedback'] = data['Cleaned Feedback'].astype(str)
 
-    # Convert text data into a document-term matrix
-    vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
-    dtm = vectorizer.fit_transform(data['Cleaned Feedback'])
+#     # Convert text data into a document-term matrix
+#     vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
+#     dtm = vectorizer.fit_transform(data['Cleaned Feedback'])
 
-    # Train LDA Model
-    num_topics = 3  # Adjust the number of topics as needed
-    lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
-    lda_model.fit(dtm)
+#     # Train LDA Model
+#     num_topics = 3  # Adjust the number of topics as needed
+#     lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
+#     lda_model.fit(dtm)
 
-    # Prepare LDA visualization
-    vis = pyLDAvis.lda_model.prepare(lda_model, dtm, vectorizer)
+#     # Prepare LDA visualization
+#     vis = pyLDAvis.lda_model.prepare(lda_model, dtm, vectorizer)
 
 
-  # Save the visualization to an external HTML file
-     # Save visualization to HTML
-    vis_html = io.StringIO()
-    pyLDAvis.save_html(vis, vis_html)
-    vis_html.seek(0)
+#   # Save the visualization to an external HTML file
+#      # Save visualization to HTML
+#     vis_html = io.StringIO()
+#     pyLDAvis.save_html(vis, vis_html)
+#     vis_html.seek(0)
 
-    # Return the visualization content
-    return vis_html.getvalue()
-#end LDA Page
+#     # Return the visualization content
+#     return vis_html.getvalue()
+# #end LDA Page
 
 
 

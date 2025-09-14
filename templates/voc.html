@@ -6,9 +6,7 @@
 <style>
     .loader {
         border: 6px solid #f3f3f3;
-        /* Light gray */
         border-top: 6px solid #3498db;
-        /* Blue */
         border-radius: 50%;
         width: 40px;
         height: 40px;
@@ -28,174 +26,190 @@
 
 <body>
     <div class="container-scroller">
-        <!-- partial:partials/_sidebar.html -->
         {% include 'partials/_sidebar.html' %}
-        <!-- partial -->
         <div class="container-fluid page-body-wrapper">
-            <!-- partial:partials/_settings-panel.html -->
-
-            <!-- partial -->
-            <!-- partial:partials/_navbar.html -->
             {% include 'partials/_navbar.html' %}
-            <!-- partial -->
             <div class="main-panel">
                 <div class="content-wrapper pb-0">
-                    <div id="wordclouds">
-                        <div id="loading" class="flex justify-center items-center h-40">
-                            <div class="row">
-                                <div class="loader"></div>
-                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
+                    <div class="row mt-3">
+                        <div class="col">
+                            <div class="card stretch-card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <h1 class="h1 font-weight-semibold mb-1 text-black">
+                                            Wordcloud with n-gram
+                                        </h1>
+                                        <label for="deptSelect" class="form-label">Filter by Department:</label>
+                                        <select id="deptSelect" class="form-select">
+                                            <option value="All Units">All Units</option>
+                                            <option value="Sales and Admission">Sales and Admission</option>
+                                            <option value="Content">Content</option>
+                                            <option value="Mentor">Mentor</option>
+                                            <option value="Registrar">Registrar</option>
+
+                                            <!-- you can generate this dynamically too -->
+                                        </select>
+                                    </div>
+
+                                    <div id="wordclouds">
+                                        <div id="loading" class="flex justify-center items-center h-40">
+                                            <div class="row">
+                                                <div class="loader"></div>
+                                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div id="wordclouds"></div>
 
                     <div class="row mt-3">
                         <div class="col">
                             <div class="card stretch-card mb-3">
                                 <div class="card-body d-flex flex-wrap justify-content-between">
-                                    <h4 class="font-weight-semibold mb-1 text-black">Sentiment Distribution per Category
+                                    <h4 class="font-weight-semibold mb-1 text-black">
+                                        Sentiment Distribution per Category
                                     </h4>
-
                                     <canvas id="sentimentCategoryChart"></canvas>
                                 </div>
                             </div>
                         </div>
-
                     </div>
+
                     <div class="row">
                         <div class="col">
                             <div class="card stretch-card mb-3">
                                 <div class="card-body d-flex flex-wrap justify-content-between">
-                                    <h4 class="font-weight-semibold mb-1 text-black">Sentiment Distribution per
-                                        Department</h4>
+                                    <h4 class="font-weight-semibold mb-1 text-black">
+                                        Sentiment Distribution per Department
+                                    </h4>
                                     <canvas id="sentimentDepartmentChart"></canvas>
-
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-
-
                 </div>
-                <!-- content-wrapper ends -->
-                <!-- partial:partials/_footer.html -->
                 {% include 'partials/_footer.html' %}
-                <!-- partial -->
             </div>
-            <!-- main-panel ends -->
         </div>
-        <!-- page-body-wrapper ends -->
     </div>
 
     <script>
-        // Show the loader initially
-        const loadingDiv = document.getElementById('loading');
-        loadingDiv.style.display = 'flex';  // Show loader
+        let categoryChart, departmentChart;
 
-        fetch('/api/wordclouds')
-    .then(response => response.json())
-    .then(data => {
-        const wordcloudsDiv = document.getElementById('wordclouds');
-        
-        // Hide the loader once data is fetched
-        document.getElementById('loading').style.display = 'none';
+        function loadWordclouds(dept = "All Units") {
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.style.display = 'flex';
+            const wordcloudsDiv = document.getElementById('wordclouds');
+            wordcloudsDiv.innerHTML = "";
+            wordcloudsDiv.appendChild(loadingDiv);
 
-        // Add a grid container
-        let gridContainer = document.createElement('div');
-        gridContainer.classList.add('grid', 'grid-cols-1', 'md:grid-cols-2', 'gap-6');
+            fetch(`/api/wordclouds?department=${dept}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
 
-        for (let category in data) {
-            // Create a container div
-            let containerDiv = document.createElement('div');
-            containerDiv.classList.add('p-4', 'border', 'rounded-md', 'shadow-md', 'bg-white');
+                    let gridContainer = document.createElement('div');
+                    gridContainer.classList.add('flex', 'flex-col', 'gap-6'); // stack vertically
 
-            // Add a heading
-            let heading = document.createElement('h3');
-            heading.classList.add('text-lg', 'font-semibold', 'mb-2');
-            heading.innerText = category;
+                    for (let category in data) {
+                        let containerDiv = document.createElement('div');
+                        containerDiv.classList.add('p-4', 'border', 'rounded-md', 'shadow-md', 'bg-white', 'w-100');
 
-            // Add the image
-            let img = document.createElement('img');
-            img.src = 'data:image/png;base64,' + data[category];
-            img.alt = category;
-            img.classList.add('w-full', 'h-auto');
+                        let heading = document.createElement('h3');
+                        heading.classList.add('text-lg', 'font-semibold', 'mb-2');
+                        heading.innerText = category;
 
-            // Append elements to the container
-            containerDiv.appendChild(heading);
-            containerDiv.appendChild(img);
+                        let img = document.createElement('img');
+                        img.src = 'data:image/png;base64,' + data[category];
+                        img.alt = category;
+                        img.style.width = '100%';   // 🔑 make full width
+                        img.style.height = 'auto';  // maintain aspect ratio
 
-            // Append the container to the grid
-            gridContainer.appendChild(containerDiv);
+                        containerDiv.appendChild(heading);
+                        containerDiv.appendChild(img);
+                        gridContainer.appendChild(containerDiv);
+                    }
+                    wordcloudsDiv.appendChild(gridContainer);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('loading').innerHTML =
+                        `<p class="text-red-600">Failed to load word clouds</p>`;
+                });
+        }
+        function loadSentimentCategory(dept = "") {
+            fetch(`/api/sentiment_category?department=${dept}`)
+                .then(response => response.json())
+                .then(data => {
+                    let labels = data.map(item => item.Category);
+                    let positive = data.map(item => item.Positive || 0);
+                    let negative = data.map(item => item.Negative || 0);
+                    let neutral = data.map(item => item.Neutral || 0);
+
+                    if (categoryChart) categoryChart.destroy();
+                    categoryChart = new Chart(document.getElementById('sentimentCategoryChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                { label: 'Positive', data: positive, backgroundColor: 'green' },
+                                { label: 'Negative', data: negative, backgroundColor: 'red' },
+                                { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
+                            ]
+                        },
+                        options: { responsive: true }
+                    });
+                });
         }
 
-        // Append the grid container to the main div
-        wordcloudsDiv.appendChild(gridContainer);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        document.getElementById('loading').innerHTML = `<p class="text-red-600">Failed to load word clouds</p>`;
-    });
+        function loadSentimentDepartment(dept = "") {
+            fetch(`/api/sentiment_department?department=${dept}`)
+                .then(response => response.json())
+                .then(data => {
+                    let labels = data.map(item => item.Department);
+                    let positive = data.map(item => item.Positive || 0);
+                    let negative = data.map(item => item.Negative || 0);
+                    let neutral = data.map(item => item.Neutral || 0);
 
-        // Load sentiment per category
-        fetch('/api/sentiment_category')
-            .then(response => response.json())
-            .then(data => {
-                let labels = data.map(item => item.Category);
-                let positive = data.map(item => item.Positive || 0);
-                let negative = data.map(item => item.Negative || 0);
-                let neutral = data.map(item => item.Neutral || 0);
-
-                new Chart(document.getElementById('sentimentCategoryChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'Positive', data: positive, backgroundColor: 'green' },
-                            { label: 'Negative', data: negative, backgroundColor: 'red' },
-                            { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
-                        ]
-                    },
-                    options: { responsive: true }
+                    if (departmentChart) departmentChart.destroy();
+                    departmentChart = new Chart(document.getElementById('sentimentDepartmentChart'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                { label: 'Positive', data: positive, backgroundColor: 'green' },
+                                { label: 'Negative', data: negative, backgroundColor: 'red' },
+                                { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: { x: { stacked: true }, y: { stacked: true } }
+                        }
+                    });
                 });
-            });
+        }
 
-        // Load sentiment per department
-        fetch('/api/sentiment_department')
-            .then(response => response.json())
-            .then(data => {
-                let labels = data.map(item => item.Department);
-                let positive = data.map(item => item.Positive || 0);
-                let negative = data.map(item => item.Negative || 0);
-                let neutral = data.map(item => item.Neutral || 0);
+        // Event listener for department filter
+        document.getElementById('deptSelect').addEventListener('change', function () {
+            let dept = this.value;
+            loadWordclouds(dept);
+            loadSentimentCategory(dept);
+            loadSentimentDepartment(dept);
+        });
 
-                new Chart(document.getElementById('sentimentDepartmentChart'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'Positive', data: positive, backgroundColor: 'green' },
-                            { label: 'Negative', data: negative, backgroundColor: 'red' },
-                            { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: { x: { stacked: true }, y: { stacked: true } }
-                    }
-                });
-            });
+        // Initial load
+        loadWordclouds();
+        loadSentimentCategory();
+        loadSentimentDepartment();
     </script>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
+
     <!-- Vendor JS -->
     <script src="{{ url_for('static', filename='assets/vendors/js/vendor.bundle.base.js') }}"></script>
-    <!-- endinject -->
-
-    <!-- Plugin JS for this page -->
     <script src="{{ url_for('static', filename='assets/vendors/jquery-bar-rating/jquery.barrating.min.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendors/chart.js/Chart.min.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.js') }}"></script>
@@ -203,20 +217,12 @@
     <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.categories.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.fillbetween.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/vendors/flot/jquery.flot.stack.js') }}"></script>
-    <!-- End plugin JS for this page -->
-
-    <!-- Injected JS -->
     <script src="{{ url_for('static', filename='assets/js/off-canvas.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/hoverable-collapse.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/misc.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/settings.js') }}"></script>
     <script src="{{ url_for('static', filename='assets/js/todolist.js') }}"></script>
-    <!-- endinject -->
-
-    <!-- Custom JS for this page -->
     <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
-
-    <!-- End custom js for this page -->
 </body>
 
 </html>

@@ -16,6 +16,7 @@
         align-items: center;
         height: 90vh;
     }
+
     .loader {
         border: 6px solid #f3f3f3;
         /* Light gray */
@@ -66,25 +67,41 @@
 
                     <div class="row">
                         <div class="col">
-                            
-                            
+
+
                             <div class="card stretch-card mb-3">
                                 <div class="card-body">
 
                                     <h1>LDA Topic Modeling Visualization</h1>
 
-                                    
-                                    <div class="loader-container" id="loader-container">
+
+                                    <!-- <div class="loader-container" id="loader-container">
                                         <div id="loading" class="flex justify-content-center items-center h-40">
                                             <div class="row">
                                                 <div class="loader"></div>
                                                 <p class="ml-3 text-gray-600">Loading LDA Content</p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </div> -->
 
                                     <!-- LDA Visualization -->
-                                    <iframe id="lda-iframe" src="" title="LDA Visualization"></iframe>
+                                    <!-- <iframe id="lda-iframe" src="" title="LDA Visualization"></iframe>
+                                      -->
+
+                                    <div class="tab-content mt-3">
+                                        <div class="tab-pane fade show active" id="positive">
+                                            <iframe src="{{ url_for('static', filename='./lda/final_LDA_n_gramPositive.html') }}"
+                                                width="100%" height="600" style="border:none;"></iframe>
+                                        </div>
+                                        <div class="tab-pane fade" id="negative">
+                                            <iframe src="{{ url_for('static', filename='lda/final_LDA_n_gramNegative.html') }}"
+                                                width="100%" height="600" style="border:none;"></iframe>
+                                        </div>
+                                        <div class="tab-pane fade" id="neutral">
+                                            <iframe src="{{ url_for('static', filename='lda/final_LDA_n_gramNeutral.html') }}"
+                                                width="100%" height="600" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -105,7 +122,7 @@
         <!-- page-body-wrapper ends -->
     </div>
 
-    <script>
+    <!-- <script>
         window.addEventListener("DOMContentLoaded", () => {
             const iframe = document.getElementById("lda-iframe");
             const loader = document.getElementById("loader-container");
@@ -126,7 +143,7 @@
                     loader.innerHTML = "<p>Failed to load LDA visualization.</p>";
                 });
         });
-    </script>
+    </script> -->
     <!-- container-scroller -->
     <!-- plugins:js -->
     <!-- Vendor JS -->
