@@ -51,6 +51,113 @@ app.secret_key = "secret123"
 # Load CSV file
 # df = pd.read_csv('excel_files/VOC_DATA.csv', encoding='latin1')
 
+# =================================================================
+# 1. LOAD DATA FROM final_data_AMA.csv FOR DASHBOARD ONLY
+# =================================================================
+# Load the AMA data for dashboard
+df_ama = pd.read_csv('excel_files/final_data_AMA.csv', encoding='latin1')
+
+# Check which sentiment column exists
+if 'Sentiment' in df_ama.columns:
+    sentiment_col = 'Sentiment'
+elif 'Sentiment Label' in df_ama.columns:
+    sentiment_col = 'Sentiment Label'
+else:
+    # If no sentiment column, create one
+    analyzer = SentimentIntensityAnalyzer()
+    def analyze_sentiment(text):
+        score = analyzer.polarity_scores(str(text))
+        compound = score['compound']
+        return 'Positive' if compound >= 0.05 else 'Negative' if compound <= -0.05 else 'Neutral'
+    
+    # Use 'Cleaned Feedback' or 'Feedback' column for sentiment analysis
+    text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in df_ama.columns else 'Feedback'
+    df_ama['Sentiment'] = df_ama[text_col].apply(analyze_sentiment)
+    sentiment_col = 'Sentiment'
+
+# Clean the data - remove empty feedback
+text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in df_ama.columns else 'Feedback'
+df_ama = df_ama.dropna(subset=[text_col])
+df_ama = df_ama[df_ama[text_col].str.strip() != '']
+
+# =================================================================
+# 2. DASHBOARD SPECIFIC FUNCTIONS (using df_ama)
+# =================================================================
+
+def final_remove_noise(text):
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', str(text))
+    return text.lower()
+
+def final_tokenize(text):
+    return word_tokenize(text)
+
+def final_normalize_characters(text):
+    return text.replace("á", "a").replace("é", "e").replace("í", "i").replace("ó", "o").replace("ú", "u")
+
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+
+# Preprocess AMA data for wordcloud
+text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in df_ama.columns else 'Feedback'
+df_ama['Processed_Feedback'] = df_ama[text_col].apply(final_remove_noise)
+df_ama['Processed_Feedback'] = df_ama['Processed_Feedback'].apply(final_normalize_characters)
+
+# Compute sentiment ratios FROM AMA DATA
+total_feedback = len(df_ama)
+sentiment_counts = df_ama[sentiment_col].value_counts()
+ama_ratios = {
+    "positive": int(sentiment_counts.get('Positive', 0)),
+    "negative": int(sentiment_counts.get('Negative', 0)),
+    "neutral": int(sentiment_counts.get('Neutral', 0)),
+    "total": total_feedback
+}
+
+def generate_wordcloud(sentiment):
+    """Generate wordcloud for dashboard from AMA data"""
+    # Filter data for the given sentiment
+    filtered_df = df_ama[df_ama[sentiment_col] == sentiment]
+    
+    # Use the processed feedback text
+    if 'Processed_Feedback' in filtered_df.columns:
+        text_col = 'Processed_Feedback'
+    else:
+        text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in filtered_df.columns else 'Feedback'
+    
+    if len(filtered_df) == 0:
+        # Return empty image if no data
+        img = io.BytesIO()
+        plt.figure(figsize=(10, 5))
+        plt.text(0.5, 0.5, f'No {sentiment} feedback available', 
+                ha='center', va='center', fontsize=12)
+        plt.axis("off")
+        plt.savefig(img, format='png', bbox_inches='tight')
+        plt.close()
+        img.seek(0)
+        return base64.b64encode(img.getvalue()).decode()
+    
+    text = ' '.join(filtered_df[text_col].astype(str))
+    wordcloud = WordCloud(width=1200, height=600, background_color='white').generate(text)
+    
+    img = io.BytesIO()
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.savefig(img, format='png', bbox_inches='tight')
+    plt.close()
+    img.seek(0)
+    return base64.b64encode(img.getvalue()).decode()
+
+
+
+
+
+
+
+
+
+
+
 #for VOC
 # Load data
 df = pd.read_csv('excel_files/VOC_final_engv1.csv', encoding='latin1')
@@ -122,6 +229,7 @@ def color_func(word, font_size, position, orientation, random_state=None, **kwar
 #end for VOC
 
 df_cme = pd.read_csv('excel_files/CME_DATA.csv', encoding='latin1')
+
 
 
 # Drop empty values (NaN and empty strings)
@@ -242,7 +350,7 @@ def dashboard():
 
 @app.route('/api/sentiment_ratios')
 def sentiment_ratios():
-    return jsonify(ratios)
+    return jsonify(ama_ratios)
 
 @app.route('/api/wordcloud/<sentiment>')
 def wordcloud(sentiment):
@@ -370,44 +478,6 @@ def lda():
 # LDA Visualization cache
 lda_vis_html = None
 
-# ================================
-# LDA PAGE
-# ================================\
-# @app.route("/lda_visualization")
-# def lda_visualization():
-#     # Load the CSV file
-#     file_path = 'excel_files/final_data_AMA.csv'  # Make sure the file is in the same directory
-#     data = pd.read_csv(file_path)
-
-#     # Preprocessing
-#     if 'Cleaned Feedback' not in data.columns:
-#         return "Column 'Cleaned Feedback' not found in CSV file."
-
-#     data['Cleaned Feedback'].dropna(inplace=True)
-#     data['Cleaned Feedback'] = data['Cleaned Feedback'].astype(str)
-
-#     # Convert text data into a document-term matrix
-#     vectorizer = CountVectorizer(max_df=0.95, min_df=2, stop_words='english')
-#     dtm = vectorizer.fit_transform(data['Cleaned Feedback'])
-
-#     # Train LDA Model
-#     num_topics = 3  # Adjust the number of topics as needed
-#     lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
-#     lda_model.fit(dtm)
-
-#     # Prepare LDA visualization
-#     vis = pyLDAvis.lda_model.prepare(lda_model, dtm, vectorizer)
-
-
-#   # Save the visualization to an external HTML file
-#      # Save visualization to HTML
-#     vis_html = io.StringIO()
-#     pyLDAvis.save_html(vis, vis_html)
-#     vis_html.seek(0)
-
-#     # Return the visualization content
-#     return vis_html.getvalue()
-# #end LDA Page
 
 
 
