@@ -48,16 +48,6 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = "secret123"
 
-
-wordcloud_cache = {
-    'AMA': {},
-    'VOC': {},
-    'CME': {}
-}
-
-
-
-
 # Load CSV file
 # =================================================================
 # 1. LOAD DATA FROM final_data_AMA.csv FOR DASHBOARD ONLY
@@ -106,106 +96,10 @@ nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('wordnet')
 
-# NLP model for AMA
-nlp_ama = spacy.load("en_core_web_sm")
-sia_ama = SentimentIntensityAnalyzer()
-
-# Domain stopwords for AMA (customize based on AMA context)
-domain_stop_ama = {"ama", "ask", "me", "anything", "question", "answer", "q", "a",
-                   "session", "host", "speaker", "presenter", "audience", "viewer",
-                   "live", "stream", "webinar", "webcast", "moderator", "participant",
-                   "thanks", "thank", "hello", "hi", "hey", "good", "morning", "afternoon",
-                   "evening", "please", "appreciate", "great", "awesome", "cool"}
-
-# Stop ngrams and banned phrases for AMA
-stop_ngrams_ama = {"thank you", "thanks for", "good question", "great question",
-                   "next question", "appreciate the", "love the", "hi everyone",
-                   "hello everyone", "welcome to", "welcome everyone"}
-
-banned_phrases_ama = {
-    "Positive": set(),
-    "Negative": set(),
-    "Neutral": set()
-}
-
-# -------------------------
-# Token filtering for AMA
-# -------------------------
-def filter_sentiment_tokens_ama(text, sentiment):
-    """Filter tokens based on sentiment and domain relevance for AMA"""
-    doc = nlp_ama(str(text))
-    tokens = []
-    for token in doc:
-        # Keep relevant parts of speech and filter domain stopwords
-        if token.pos_ in {"ADJ", "ADV", "VERB", "NOUN"} and token.text.lower() not in domain_stop_ama:
-            lemma = token.lemma_.lower()
-            if lemma in banned_phrases_ama.get(sentiment, set()):
-                continue
-            # For AMA, we might want to be more inclusive with sentiment
-            polarity = sia_ama.polarity_scores(lemma)["compound"]
-            if sentiment == "Positive" and polarity > 0:
-                tokens.append(lemma)
-            elif sentiment == "Negative" and polarity < 0:
-                tokens.append(lemma)
-            elif sentiment == "Neutral" and abs(polarity) < 0.1:  # More relaxed for neutral
-                tokens.append(lemma)
-    return tokens
-
-# -------------------------
-# N-gram extraction for AMA
-# -------------------------
-def extract_ngrams_ama(tokens, sentiment, ngram_range=(2, 3), top_n=50):
-    """Extract n-grams for AMA data with filtering"""
-    ngrams = []
-    for n in range(ngram_range[0], ngram_range[1] + 1):
-        ngrams.extend([" ".join(tokens[i:i+n]) for i in range(len(tokens) - n + 1)])
-    
-    freq = Counter(ngrams)
-    # Filter out n-grams that contain stop words or are in stop ngrams
-    cleaned = {}
-    for k, v in freq.items():
-        words = k.split()
-        # Check if any word is in domain stopwords
-        if any(word in domain_stop_ama for word in words):
-            continue
-        # Check if n-gram is in stop ngrams
-        if k in stop_ngrams_ama:
-            continue
-        # Keep only meaningful n-grams
-        if len(set(words)) > 1:
-            cleaned[k] = v
-    
-    # Apply sentiment-specific banned phrases
-    banned = banned_phrases_ama.get(sentiment, set())
-    cleaned = {k: v for k, v in cleaned.items() if k not in banned}
-    
-    # Replace spaces with underscores for wordcloud
-    cleaned = {k.replace(" ", "_"): v for k, v in cleaned.items()}
-    
-    return dict(Counter(cleaned).most_common(top_n))
-
-# -------------------------
-# Word coloring for AMA
-# -------------------------
-def color_func_ama(word, font_size, position, orientation, random_state=None, **kwargs):
-    """Color function for AMA wordcloud"""
-    if "_" in word:  # n-grams
-        return "darkorange"  # Different color than VOC for distinction
-    else:
-        return "darkblue"
-
-# Preprocess AMA data for wordcloud with filtering
+# Preprocess AMA data for wordcloud
 text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in df_ama.columns else 'Feedback'
-
-# Process feedback text
 df_ama['Processed_Feedback'] = df_ama[text_col].apply(final_remove_noise)
 df_ama['Processed_Feedback'] = df_ama['Processed_Feedback'].apply(final_normalize_characters)
-
-# Create filtered tokens column for each sentiment
-df_ama['Filtered_Tokens'] = df_ama.apply(
-    lambda row: filter_sentiment_tokens_ama(row['Processed_Feedback'], row[sentiment_col]), 
-    axis=1
-)
 
 # Compute sentiment ratios FROM AMA DATA
 total_feedback = len(df_ama)
@@ -217,17 +111,16 @@ ama_ratios = {
     "total": total_feedback
 }
 
-def generate_wordcloud_ama(sentiment):
-    """Generate wordcloud for dashboard from AMA data with domain filtering"""
+def generate_wordcloud(sentiment):
+    """Generate wordcloud for dashboard from AMA data"""
     # Filter data for the given sentiment
-    
-    # Check cache first
-    if sentiment in wordcloud_cache['AMA']:
-        return wordcloud_cache['AMA'][sentiment]
-    
-    # Filter data for the given sentiment
-   
     filtered_df = df_ama[df_ama[sentiment_col] == sentiment]
+    
+    # Use the processed feedback text
+    if 'Processed_Feedback' in filtered_df.columns:
+        text_col = 'Processed_Feedback'
+    else:
+        text_col = 'Cleaned Feedback' if 'Cleaned Feedback' in filtered_df.columns else 'Feedback'
     
     if len(filtered_df) == 0:
         # Return empty image if no data
@@ -241,61 +134,21 @@ def generate_wordcloud_ama(sentiment):
         img.seek(0)
         return base64.b64encode(img.getvalue()).decode()
     
-    # Get filtered tokens for this sentiment
-    all_tokens = []
-    for tokens in filtered_df['Filtered_Tokens']:
-        all_tokens.extend(tokens)
-    
-    # Extract n-grams from filtered tokens
-    ngrams_dict = extract_ngrams_ama(all_tokens, sentiment, ngram_range=(2, 3), top_n=50)
-    
-    # Combine single tokens and n-grams for wordcloud
-    token_freq = Counter(all_tokens)
-    # Remove single tokens that are also in n-grams (to avoid duplication)
-    for ngram in ngrams_dict.keys():
-        for token in ngram.split('_'):
-            if token in token_freq:
-                token_freq[token] = max(0, token_freq[token] - 1)
-    
-    # Combine frequencies
-    combined_freq = {**token_freq, **ngrams_dict}
-    
-    # Remove items with frequency 0
-    combined_freq = {k: v for k, v in combined_freq.items() if v > 0}
-    
-    if not combined_freq:
-        # Return empty wordcloud if no meaningful tokens
-        img = io.BytesIO()
-        plt.figure(figsize=(10, 5))
-        plt.text(0.5, 0.5, f'No meaningful {sentiment} tokens after filtering', 
-                ha='center', va='center', fontsize=12)
-        plt.axis("off")
-        plt.savefig(img, format='png', bbox_inches='tight')
-        plt.close()
-        img.seek(0)
-        return base64.b64encode(img.getvalue()).decode()
-    
-    # Generate wordcloud from frequencies
-    wordcloud = WordCloud(
-        width=1200, 
-        height=600, 
-        background_color='white',
-        color_func=color_func_ama
-    ).generate_from_frequencies(combined_freq)
+    text = ' '.join(filtered_df[text_col].astype(str))
+    wordcloud = WordCloud(width=1200, height=600, background_color='white').generate(text)
     
     img = io.BytesIO()
     plt.figure(figsize=(10, 5))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis("off")
-    plt.title(f'AMA {sentiment} Feedback - Filtered Keywords', fontsize=16)
     plt.savefig(img, format='png', bbox_inches='tight')
     plt.close()
     img.seek(0)
-    result = base64.b64encode(img.getvalue()).decode()
-    
-    # Store in cache
-    wordcloud_cache['AMA'][sentiment] = result
-    return result
+    return base64.b64encode(img.getvalue()).decode()
+
+
+
+
 
 
 
@@ -373,10 +226,6 @@ def color_func(word, font_size, position, orientation, random_state=None, **kwar
 
 #end for VOC
 
-
-
-
-#for CME
 df_cme = pd.read_csv('excel_files/CME_DATA.csv', encoding='latin1')
 
 
@@ -430,11 +279,6 @@ ratios = {
 }
 
 def generate_wordcloud(sentiment):
-    
-    # Check cache first
-    if sentiment in wordcloud_cache['CME']:
-        return wordcloud_cache['CME'][sentiment]
-    
     text = ' '.join(df[df['Sentiment'] == sentiment]['Feedback'])
     wordcloud = WordCloud(width=1200, height=600, background_color='white').generate(text)
     img = io.BytesIO()
@@ -446,10 +290,7 @@ def generate_wordcloud(sentiment):
     
     plt.close()
     img.seek(0)
-    result = base64.b64encode(img.getvalue()).decode()
-    # Store in cache
-    wordcloud_cache['CME'][sentiment] = result
-    return result
+    return base64.b64encode(img.getvalue()).decode()
 
 DB_CONFIG = {"host": "localhost", "user": "root", "password": "", "database": "cme_db"}
 
@@ -462,8 +303,7 @@ def get_db_connection():
     except Exception as e:
         print(f"Error connecting to MySQL: {e}")
         return None
-
-#end for CME
+    
 
 
 @app.route("/")
@@ -513,7 +353,7 @@ def sentiment_ratios():
 @app.route('/api/wordcloud/<sentiment>')
 def wordcloud(sentiment):
     if sentiment in ["Positive", "Negative", "Neutral"]:
-        return jsonify({"wordcloud": generate_wordcloud_ama(sentiment)})
+        return jsonify({"wordcloud": generate_wordcloud(sentiment)})
     return jsonify({"error": "Invalid sentiment category"}), 400
 
 
@@ -526,29 +366,18 @@ def voc():
     email = session.get("email", "Guest")
     fullname = session.get("fullname", "Guest")
     return render_template("voc.html", email=email, fullname=fullname)
+
 @app.route('/api/wordclouds')
 def wordclouds_by_department_and_sentiment():
     dept_filter = request.args.get("department")  # <-- get department from query param
 
-    # Check if we have the precomputed grouped feedback
-    cache_key = f"grouped_feedback_{dept_filter}"
-    
-    # Use a simple cache for grouped feedback to avoid recomputing
-    if not hasattr(wordclouds_by_department_and_sentiment, "cache"):
-        wordclouds_by_department_and_sentiment.cache = {}
-    
-    if cache_key not in wordclouds_by_department_and_sentiment.cache:
-        grouped_feedback = df.groupby(["Department", "Sentiment Label"])["Feedback"].apply(
-            lambda texts: " ".join(texts.astype(str))
-        ).reset_index()
+    grouped_feedback = df.groupby(["Department", "Sentiment Label"])["Feedback"].apply(
+        lambda texts: " ".join(texts.astype(str))
+    ).reset_index()
 
-        if dept_filter:
-            grouped_feedback = grouped_feedback[grouped_feedback["Department"] == dept_filter]
-        
-        wordclouds_by_department_and_sentiment.cache[cache_key] = grouped_feedback
-    
-    grouped_feedback = wordclouds_by_department_and_sentiment.cache[cache_key]
-    
+    if dept_filter:
+        grouped_feedback = grouped_feedback[grouped_feedback["Department"] == dept_filter]
+
     departments = grouped_feedback["Department"].unique()
     sentiments = grouped_feedback["Sentiment Label"].unique()
 
@@ -556,14 +385,6 @@ def wordclouds_by_department_and_sentiment():
 
     for dept in departments:
         for sentiment in sentiments:
-            # Create a unique cache key for this department-sentiment combination
-            cache_key_wc = f"VOC_{dept}_{sentiment}_{dept_filter}"
-            
-            # Check cache first
-            if cache_key_wc in wordcloud_cache['VOC']:
-                wordclouds[f"{dept} - {sentiment}"] = wordcloud_cache['VOC'][cache_key_wc]
-                continue
-            
             text = grouped_feedback[
                 (grouped_feedback["Department"] == dept) &
                 (grouped_feedback["Sentiment Label"] == sentiment)
@@ -574,11 +395,7 @@ def wordclouds_by_department_and_sentiment():
                 if tokens:
                     word_freq = Counter(tokens)
                     ngram_freq = extract_ngrams(tokens, sentiment, ngram_range=(2, 3), top_n=50)
-                    
-                    # Combine frequencies properly
-                    combined_counter = Counter(word_freq)
-                    combined_counter.update(Counter(ngram_freq))
-                    combined_freq = dict(combined_counter)
+                    combined_freq = word_freq + Counter(ngram_freq)
 
                     if combined_freq:
                         wc = WordCloud(
@@ -596,71 +413,17 @@ def wordclouds_by_department_and_sentiment():
                         img.seek(0)
 
                         key = f"{dept} - {sentiment}"
-                        wordcloud_base64 = base64.b64encode(img.getvalue()).decode()
-                        
-                        # Store in cache
-                        wordcloud_cache['VOC'][cache_key_wc] = wordcloud_base64
-                        wordclouds[key] = wordcloud_base64
+                        wordclouds[key] = base64.b64encode(img.getvalue()).decode()
                     else:
-                        # Create empty placeholder and cache it too
-                        img = io.BytesIO()
-                        plt.figure(figsize=(8, 4))
-                        plt.text(0.5, 0.5, "No meaningful tokens after filtering", 
-                                ha='center', va='center', fontsize=10)
-                        plt.axis("off")
-                        plt.savefig(img, format="png", bbox_inches="tight")
-                        plt.close()
-                        img.seek(0)
-                        wordcloud_base64 = base64.b64encode(img.getvalue()).decode()
-                        
-                        wordcloud_cache['VOC'][cache_key_wc] = wordcloud_base64
-                        wordclouds[f"{dept} - {sentiment}"] = wordcloud_base64
+                        wordclouds[f"{dept} - {sentiment}"] = None
                 else:
-                    # Create empty placeholder for no tokens
-                    img = io.BytesIO()
-                    plt.figure(figsize=(8, 4))
-                    plt.text(0.5, 0.5, "No tokens extracted", 
-                            ha='center', va='center', fontsize=10)
-                    plt.axis("off")
-                    plt.savefig(img, format="png", bbox_inches="tight")
-                    plt.close()
-                    img.seek(0)
-                    wordcloud_base64 = base64.b64encode(img.getvalue()).decode()
-                    
-                    wordcloud_cache['VOC'][cache_key_wc] = wordcloud_base64
-                    wordclouds[f"{dept} - {sentiment}"] = wordcloud_base64
+                    wordclouds[f"{dept} - {sentiment}"] = None
             else:
-                # Create empty placeholder for no data
-                img = io.BytesIO()
-                plt.figure(figsize=(8, 4))
-                plt.text(0.5, 0.5, "No data available", 
-                        ha='center', va='center', fontsize=10)
-                plt.axis("off")
-                plt.savefig(img, format="png", bbox_inches="tight")
-                plt.close()
-                img.seek(0)
-                wordcloud_base64 = base64.b64encode(img.getvalue()).decode()
-                
-                wordcloud_cache['VOC'][cache_key_wc] = wordcloud_base64
-                wordclouds[f"{dept} - {sentiment}"] = wordcloud_base64
+                wordclouds[f"{dept} - {sentiment}"] = None
 
     return jsonify(wordclouds)
-#if want to clear
 
-# Add a route to clear VOC cache when needed
-@app.route('/api/clear_voc_cache')
-def clear_voc_cache():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-    
-    # Clear VOC cache
-    wordcloud_cache['VOC'] = {}
-    
-    # Clear function cache
-    if hasattr(wordclouds_by_department_and_sentiment, "cache"):
-        wordclouds_by_department_and_sentiment.cache = {}
-    
-    return jsonify({"message": "VOC wordcloud cache cleared successfully"})
+
 
 @app.route('/api/sentiment_category')
 def sentiment_per_category():

@@ -22,6 +22,35 @@
             transform: rotate(360deg);
         }
     }
+    
+    /* Wordcloud card styles */
+    .wordcloud-card {
+        transition: all 0.3s ease;
+        border-left-width: 8px;
+    }
+    
+    .wordcloud-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sentiment-icon {
+        font-size: 1.8rem;
+    }
+    
+    .sentiment-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .department-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
 </style>
 
 <body>
@@ -31,48 +60,73 @@
             {% include 'partials/_navbar.html' %}
             <div class="main-panel">
                 <div class="content-wrapper pb-0">
+                    <!-- Filter Section -->
                     <div class="row mt-3">
                         <div class="col">
                             <div class="card stretch-card mb-3">
                                 <div class="card-body">
-                                    <div class="mb-3">
-                                        <h1 class="h1 font-weight-semibold mb-1 text-black">
-                                            Wordcloud with n-gram
-                                        </h1>
-                                        <label for="deptSelect" class="form-label">Filter by Department:</label>
-                                        <select id="deptSelect" class="form-select">
-                                            <option value="All Units">All Units</option>
-                                            <option value="Sales and Admission">Sales and Admission</option>
-                                            <option value="Content">Content</option>
-                                            <option value="Mentor">Mentor</option>
-                                            <option value="Registrar">Registrar</option>
+                                    <h1 class="h1 font-weight-semibold mb-3 text-black">
+                                        VOC Feedback Analysis
+                                        
+                                            <button id="refreshBtn" class="btn btn-primary btn-sm">
+                                                <i class="mdi mdi-sync"></i> Refresh
+                                            </button>
+                                     
+                                    </h1>
+                                    <p class="text-muted mt-2">Wordclouds and graphs showing sentiment analysis from VOC feedback data</p>
 
-                                            <!-- you can generate this dynamically too -->
-                                        </select>
-                                    </div>
-
-                                    <div id="wordclouds">
-                                        <div id="loading" class="flex justify-center items-center h-40">
-                                            <div class="row">
-                                                <div class="loader"></div>
-                                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
-                                            </div>
+                                    <div class="row">
+                                        <div class="col-md-6 d-flex align-items-center">
+                                            <label for="deptSelect" class="form-label mr-3">Filter by Department:</label>
+                                            <select id="deptSelect" class="form-select form-control w-50">
+                                                <option value="All Units">All Units</option>
+                                                <option value="Sales and Admission">Sales and Admission</option>
+                                                <option value="Content">Content</option>
+                                                <option value="Mentor">Mentor</option>
+                                                <option value="Registrar">Registrar</option>
+                                                <!-- you can generate this dynamically too -->
+                                            </select>
                                         </div>
+                                       
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Wordcloud Cards Section -->
+                    <div id="wordclouds-container">
+                        <!-- Loading State -->
+                        <div id="loading" class="row">
+                            <div class="col-12">
+                                <div class="card stretch-card mb-3">
+                                    <div class="card-body">
+                                        <div class="d-flex flex-column align-items-center justify-content-center py-5">
+                                            <div class="loader mb-3"></div>
+                                            <p class="text-gray-600">Loading word clouds...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
+                        <!-- Wordcloud Cards will be inserted here -->
+                        <div id="wordcloud-cards" class="row" style="display: none;">
+                            <!-- Cards will be dynamically generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
                     <div class="row mt-3">
                         <div class="col">
                             <div class="card stretch-card mb-3">
-                                <div class="card-body d-flex flex-wrap justify-content-between">
-                                    <h4 class="font-weight-semibold mb-1 text-black">
+                                <div class="card-body">
+                                    <h4 class="font-weight-semibold mb-3 text-black">
                                         Sentiment Distribution per Category
                                     </h4>
-                                    <canvas id="sentimentCategoryChart"></canvas>
+                                    <div class="chart-container" style="position: relative; height:400px;">
+                                        <canvas id="sentimentCategoryChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -81,11 +135,13 @@
                     <div class="row">
                         <div class="col">
                             <div class="card stretch-card mb-3">
-                                <div class="card-body d-flex flex-wrap justify-content-between">
-                                    <h4 class="font-weight-semibold mb-1 text-black">
+                                <div class="card-body">
+                                    <h4 class="font-weight-semibold mb-3 text-black">
                                         Sentiment Distribution per Department
                                     </h4>
-                                    <canvas id="sentimentDepartmentChart"></canvas>
+                                    <div class="chart-container" style="position: relative; height:400px;">
+                                        <canvas id="sentimentDepartmentChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -99,48 +155,176 @@
 
     <script>
         let categoryChart, departmentChart;
+        let currentDepartment = "All Units";
 
+        // Function to determine sentiment color and icon
+        function getSentimentInfo(sentiment) {
+            const sentiments = {
+                'Positive': {
+                    color: 'green',
+                    icon: 'mdi-emoticon-happy',
+                    bgColor: 'bg-green-100',
+                    borderColor: 'border-green-500',
+                    textColor: 'text-green-800'
+                },
+                'Negative': {
+                    color: 'red',
+                    icon: 'mdi-emoticon-sad',
+                    bgColor: 'bg-red-100',
+                    borderColor: 'border-red-500',
+                    textColor: 'text-red-800'
+                },
+                'Neutral': {
+                    color: 'yellow',
+                    icon: 'mdi-emoticon-neutral',
+                    bgColor: 'bg-yellow-100',
+                    borderColor: 'border-yellow-500',
+                    textColor: 'text-yellow-800'
+                }
+            };
+            return sentiments[sentiment] || sentiments['Neutral'];
+        }
+
+        // Function to create wordcloud card
+        function createWordcloudCard(dept, sentiment, wordcloudData) {
+            const sentimentInfo = getSentimentInfo(sentiment);
+            
+            return `
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="wordcloud-card p-6 rounded-2xl shadow-lg ${sentimentInfo.bgColor} ${sentimentInfo.borderColor}">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-3">
+                                <i class="mdi ${sentimentInfo.icon} ${sentimentInfo.textColor} sentiment-icon"></i>
+                                <h2 class="${sentimentInfo.textColor} sentiment-title">${sentiment}</h2>
+                            </div>
+                            <span class="department-badge bg-gray-200 text-gray-800">${dept}</span>
+                        </div>
+                        
+                        <!-- Loader -->
+                        <div id="loader-${dept.replace(/\s+/g, '-')}-${sentiment}" class="flex justify-center items-center h-48">
+                            <div class="loader"></div>
+                        </div>
+
+                        <!-- Wordcloud Image -->
+                        <img id="wordcloud-${dept.replace(/\s+/g, '-')}-${sentiment}" 
+                             src="data:image/png;base64,${wordcloudData}" 
+                             alt="${dept} - ${sentiment} Word Cloud" 
+                             class="mt-3 w-full h-auto rounded-lg shadow-sm"
+                             style="display: none;"
+                             onload="document.getElementById('loader-${dept.replace(/\s+/g, '-')}-${sentiment}').style.display = 'none'; this.style.display = 'block';"
+                             onerror="document.getElementById('loader-${dept.replace(/\s+/g, '-')}-${sentiment}').innerHTML = '<p class=\'text-red-600\'>Failed to load image</p>';">
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to organize wordclouds by department
+        function organizeWordcloudsByDepartment(wordcloudsData) {
+            const organized = {};
+            
+            for (const key in wordcloudsData) {
+                if (wordcloudsData[key]) {
+                    const [dept, sentiment] = key.split(' - ');
+                    
+                    if (!organized[dept]) {
+                        organized[dept] = {};
+                    }
+                    
+                    organized[dept][sentiment] = wordcloudsData[key];
+                }
+            }
+            
+            return organized;
+        }
+
+        // Function to load wordclouds
         function loadWordclouds(dept = "All Units") {
-            const loadingDiv = document.getElementById('loading');
-            loadingDiv.style.display = 'flex';
-            const wordcloudsDiv = document.getElementById('wordclouds');
-            wordcloudsDiv.innerHTML = "";
-            wordcloudsDiv.appendChild(loadingDiv);
-
+            currentDepartment = dept;
+            
+            // Show loading state
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('wordcloud-cards').style.display = 'none';
+            
             fetch(`/api/wordclouds?department=${dept}`)
                 .then(response => response.json())
                 .then(data => {
+                    // Hide loading state
                     document.getElementById('loading').style.display = 'none';
-
-                    let gridContainer = document.createElement('div');
-                    gridContainer.classList.add('flex', 'flex-col', 'gap-6'); // stack vertically
-
-                    for (let category in data) {
-                        let containerDiv = document.createElement('div');
-                        containerDiv.classList.add('p-4', 'border', 'rounded-md', 'shadow-md', 'bg-white', 'w-100');
-
-                        let heading = document.createElement('h3');
-                        heading.classList.add('text-lg', 'font-semibold', 'mb-2');
-                        heading.innerText = category;
-
-                        let img = document.createElement('img');
-                        img.src = 'data:image/png;base64,' + data[category];
-                        img.alt = category;
-                        img.style.width = '100%';   // 🔑 make full width
-                        img.style.height = 'auto';  // maintain aspect ratio
-
-                        containerDiv.appendChild(heading);
-                        containerDiv.appendChild(img);
-                        gridContainer.appendChild(containerDiv);
+                    
+                    // Organize data by department
+                    const organizedData = organizeWordcloudsByDepartment(data);
+                    
+                    // Get container
+                    const container = document.getElementById('wordcloud-cards');
+                    container.innerHTML = '';
+                    
+                    // Create cards for each department
+                    for (const [department, sentiments] of Object.entries(organizedData)) {
+                        // Create department header
+                        const departmentHeader = `
+                            <div class="col-12 mb-3">
+                                <h3 class="text-xl font-semibold text-gray-800 border-b pb-2">
+                                    <i class="mdi mdi-office-building mr-2"></i>${department}
+                                </h3>
+                            </div>
+                        `;
+                        container.innerHTML += departmentHeader;
+                        
+                        // Create sentiment cards for this department
+                        for (const [sentiment, wordcloudData] of Object.entries(sentiments)) {
+                            container.innerHTML += createWordcloudCard(department, sentiment, wordcloudData);
+                        }
                     }
-                    wordcloudsDiv.appendChild(gridContainer);
+                    
+                    // Show the cards container
+                    container.style.display = 'flex';
+                    container.classList.add('row');
+                    
+                    // If no data, show message
+                    if (Object.keys(organizedData).length === 0) {
+                        container.innerHTML = `
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body text-center py-5">
+                                        <i class="fas fa-cloud text-4xl text-gray-400 mb-3"></i>
+                                        <h4 class="text-gray-600">No wordcloud data available</h4>
+                                        <p class="text-gray-500">Try selecting a different department</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    document.getElementById('loading').innerHTML =
-                        `<p class="text-red-600">Failed to load word clouds</p>`;
+                    document.getElementById('loading').innerHTML = `
+                        <div class="col-12">
+                            <div class="alert alert-danger" role="alert">
+                                <i class="fas fa-exclamation-triangle mr-2"></i>
+                                Failed to load word clouds. Please try again.
+                            </div>
+                        </div>
+                    `;
                 });
         }
+
+        // Function to refresh wordclouds (clears cache and reloads)
+        function refreshWordclouds() {
+            // Clear cache first
+            fetch('/api/clear_voc_cache')
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.message);
+                    // Reload wordclouds
+                    loadWordclouds(currentDepartment);
+                })
+                .catch(error => {
+                    console.error('Error clearing cache:', error);
+                    loadWordclouds(currentDepartment);
+                });
+        }
+
+        // Chart functions (unchanged)
         function loadSentimentCategory(dept = "") {
             fetch(`/api/sentiment_category?department=${dept}`)
                 .then(response => response.json())
@@ -151,17 +335,62 @@
                     let neutral = data.map(item => item.Neutral || 0);
 
                     if (categoryChart) categoryChart.destroy();
-                    categoryChart = new Chart(document.getElementById('sentimentCategoryChart'), {
+                    
+                    const ctx = document.getElementById('sentimentCategoryChart').getContext('2d');
+                    categoryChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [
-                                { label: 'Positive', data: positive, backgroundColor: 'green' },
-                                { label: 'Negative', data: negative, backgroundColor: 'red' },
-                                { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
+                                { 
+                                    label: 'Positive', 
+                                    data: positive, 
+                                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                                    borderColor: 'rgb(34, 197, 94)',
+                                    borderWidth: 1
+                                },
+                                { 
+                                    label: 'Negative', 
+                                    data: negative, 
+                                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                    borderColor: 'rgb(239, 68, 68)',
+                                    borderWidth: 1
+                                },
+                                { 
+                                    label: 'Neutral', 
+                                    data: neutral, 
+                                    backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                                    borderColor: 'rgb(156, 163, 175)',
+                                    borderWidth: 1
+                                }
                             ]
                         },
-                        options: { responsive: true }
+                        options: { 
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Sentiment Distribution by Category'
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
                     });
                 });
         }
@@ -176,36 +405,101 @@
                     let neutral = data.map(item => item.Neutral || 0);
 
                     if (departmentChart) departmentChart.destroy();
-                    departmentChart = new Chart(document.getElementById('sentimentDepartmentChart'), {
+                    
+                    const ctx = document.getElementById('sentimentDepartmentChart').getContext('2d');
+                    departmentChart = new Chart(ctx, {
                         type: 'bar',
                         data: {
                             labels: labels,
                             datasets: [
-                                { label: 'Positive', data: positive, backgroundColor: 'green' },
-                                { label: 'Negative', data: negative, backgroundColor: 'red' },
-                                { label: 'Neutral', data: neutral, backgroundColor: 'gray' }
+                                { 
+                                    label: 'Positive', 
+                                    data: positive, 
+                                    backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                                    borderColor: 'rgb(34, 197, 94)',
+                                    borderWidth: 1
+                                },
+                                { 
+                                    label: 'Negative', 
+                                    data: negative, 
+                                    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                                    borderColor: 'rgb(239, 68, 68)',
+                                    borderWidth: 1
+                                },
+                                { 
+                                    label: 'Neutral', 
+                                    data: neutral, 
+                                    backgroundColor: 'rgba(156, 163, 175, 0.7)',
+                                    borderColor: 'rgb(156, 163, 175)',
+                                    borderWidth: 1
+                                }
                             ]
                         },
                         options: {
                             responsive: true,
-                            scales: { x: { stacked: true }, y: { stacked: true } }
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Sentiment Distribution by Department'
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    stacked: true
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    stacked: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
                         }
                     });
                 });
         }
 
-        // Event listener for department filter
-        document.getElementById('deptSelect').addEventListener('change', function () {
-            let dept = this.value;
-            loadWordclouds(dept);
-            loadSentimentCategory(dept);
-            loadSentimentDepartment(dept);
-        });
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Department filter
+            document.getElementById('deptSelect').addEventListener('change', function() {
+                let dept = this.value;
+                loadWordclouds(dept);
+                loadSentimentCategory(dept);
+                loadSentimentDepartment(dept);
+            });
 
-        // Initial load
-        loadWordclouds();
-        loadSentimentCategory();
-        loadSentimentDepartment();
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', function() {
+                const btn = this;
+                const originalText = btn.innerHTML;
+                
+                // Show loading state on button
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+                btn.disabled = true;
+                
+                refreshWordclouds();
+                
+                // Restore button after 2 seconds
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 2000);
+            });
+
+            // Initial load
+            loadWordclouds();
+            loadSentimentCategory();
+            loadSentimentDepartment();
+        });
     </script>
 
     <!-- Vendor JS -->

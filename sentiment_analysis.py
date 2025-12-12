@@ -142,83 +142,131 @@
 
 
 # sentiment_analysis.py - Updated version
-
+# sentiment_analysis.py
 import pickle
 import re
 import nltk
 import requests
 import io
+import os
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import gdown  # Install with: pip install gdown
+import gdown
 
 # ✅ Download NLTK resources
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 
-# ✅ Google Drive file IDs (from your URLs)
+# ✅ Google Drive file IDs
 MODEL_FILE_ID = "1ZN05zFYNHKVZKTN0sWDlq-PcPb98m2qd"
 VECTORIZER_FILE_ID = "1ZLQT6vC2WebqFnVleF6Gr6jjVPOTGG96"
 
-# ✅ Function to download from Google Drive
-def download_from_gdrive(file_id, destination):
-    """Download file from Google Drive"""
-    url = f"https://drive.google.com/uc?id={file_id}"
-    gdown.download(url, destination, quiet=False)
-    return destination
+# ✅ File paths
+MODEL_PATH = "ann_model.pkl"
+VECTORIZER_PATH = "tfidf_vectorizer.pkl"
 
-# ✅ Download and load model
+def download_from_gdrive(file_id, destination):
+    """Download file from Google Drive if it doesn't exist"""
+    # Check if file already exists
+    if os.path.exists(destination):
+        print(f"File already exists: {destination}")
+        return destination
+    
+    print(f"Downloading {destination}...")
+    url = f"https://drive.google.com/uc?id={file_id}"
+    try:
+        gdown.download(url, destination, quiet=False)
+        print(f"Downloaded: {destination}")
+        return destination
+    except Exception as e:
+        print(f"Error downloading {destination}: {e}")
+        raise
+
+def download_file_from_google_drive(file_id):
+    """Manual download method as fallback"""
+    URL = "https://docs.google.com/uc?export=download"
+    session = requests.Session()
+    
+    response = session.get(URL, params={'id': file_id}, stream=True)
+    token = None
+    
+    # Handle confirmation for large files
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            token = value
+            break
+    
+    if token:
+        params = {'id': file_id, 'confirm': token}
+        response = session.get(URL, params=params, stream=True)
+    
+    return io.BytesIO(response.content)
+
+def load_model_and_vectorizer():
+    """Load or download model and vectorizer"""
+    global loaded_ann_model, loaded_tfidf_vectorizer
+    
+    try:
+        # Try to load existing files first
+        if os.path.exists(MODEL_PATH) and os.path.exists(VECTORIZER_PATH):
+            print("Loading existing model files...")
+            with open(MODEL_PATH, 'rb') as f:
+                loaded_ann_model = pickle.load(f)
+            with open(VECTORIZER_PATH, 'rb') as f:
+                loaded_tfidf_vectorizer = pickle.load(f)
+            print("Model files loaded successfully!")
+            return loaded_ann_model, loaded_tfidf_vectorizer
+        
+        # If files don't exist, download them
+        print("Model files not found. Downloading...")
+        
+        # Option 1: Using gdown library
+        try:
+            download_from_gdrive(MODEL_FILE_ID, MODEL_PATH)
+            download_from_gdrive(VECTORIZER_FILE_ID, VECTORIZER_PATH)
+            
+            # Load the downloaded files
+            with open(MODEL_PATH, 'rb') as f:
+                loaded_ann_model = pickle.load(f)
+            with open(VECTORIZER_PATH, 'rb') as f:
+                loaded_tfidf_vectorizer = pickle.load(f)
+                
+            print("Model files downloaded and loaded successfully!")
+            return loaded_ann_model, loaded_tfidf_vectorizer
+            
+        except Exception as e:
+            print(f"Error with gdown: {e}")
+            print("Trying manual download method...")
+            
+            # Option 2: Manual download method
+            model_content = download_file_from_google_drive(MODEL_FILE_ID)
+            loaded_ann_model = pickle.load(model_content)
+            
+            vectorizer_content = download_file_from_google_drive(VECTORIZER_FILE_ID)
+            loaded_tfidf_vectorizer = pickle.load(vectorizer_content)
+            
+            # Save downloaded files for future use
+            with open(MODEL_PATH, 'wb') as f:
+                pickle.dump(loaded_ann_model, f)
+            with open(VECTORIZER_PATH, 'wb') as f:
+                pickle.dump(loaded_tfidf_vectorizer, f)
+                
+            print("Model files downloaded (manual) and saved for future use!")
+            return loaded_ann_model, loaded_tfidf_vectorizer
+            
+    except Exception as e:
+        print(f"Error loading model files: {e}")
+        raise
+
+# ✅ Initialize model and vectorizer
 try:
-    # Option 1: Using gdown library (recommended)
-    print("Downloading model file...")
-    model_path = "ann_model.pkl"
-    download_from_gdrive(MODEL_FILE_ID, model_path)
-    
-    print("Downloading vectorizer file...")
-    vectorizer_path = "tfidf_vectorizer.pkl"
-    download_from_gdrive(VECTORIZER_FILE_ID, vectorizer_path)
-    
-    # Load the files
-    with open(model_path, 'rb') as f:
-        loaded_ann_model = pickle.load(f)
-    
-    with open(vectorizer_path, 'rb') as f:
-        loaded_tfidf_vectorizer = pickle.load(f)
-        
+    loaded_ann_model, loaded_tfidf_vectorizer = load_model_and_vectorizer()
 except Exception as e:
-    print(f"Error with gdown: {e}")
-    
-    # Option 2: Manual download method
-    print("Trying manual download method...")
-    
-    def download_file_from_google_drive(file_id):
-        URL = "https://docs.google.com/uc?export=download"
-        session = requests.Session()
-        
-        response = session.get(URL, params={'id': file_id}, stream=True)
-        token = None
-        
-        # Handle confirmation for large files
-        for key, value in response.cookies.items():
-            if key.startswith('download_warning'):
-                token = value
-                break
-        
-        if token:
-            params = {'id': file_id, 'confirm': token}
-            response = session.get(URL, params=params, stream=True)
-        
-        return io.BytesIO(response.content)
-    
-    # Download model
-    model_content = download_file_from_google_drive(MODEL_FILE_ID)
-    loaded_ann_model = pickle.load(model_content)
-    
-    # Download vectorizer
-    vectorizer_content = download_file_from_google_drive(VECTORIZER_FILE_ID)
-    loaded_tfidf_vectorizer = pickle.load(vectorizer_content)
+    print(f"Failed to initialize model: {e}")
+    loaded_ann_model = None
+    loaded_tfidf_vectorizer = None
 
 # ✅ Text Cleaning Functions
 def remove_noise(text):
@@ -246,7 +294,16 @@ def preprocess_text(text):
     return ' '.join(tokens)
 
 # ✅ Prediction Function
-def predict_sentiment_label_ann(input_text, model, vectorizer):
+def predict_sentiment_label_ann(input_text, model=None, vectorizer=None):
+    # Use provided model/vectorizer or global ones
+    if model is None:
+        model = loaded_ann_model
+    if vectorizer is None:
+        vectorizer = loaded_tfidf_vectorizer
+    
+    if model is None or vectorizer is None:
+        raise ValueError("Model or vectorizer not initialized")
+    
     preprocessed_text = preprocess_text(input_text)
     input_text_tfidf = vectorizer.transform([preprocessed_text])
     numeric_prediction = model.predict(input_text_tfidf)[0]
