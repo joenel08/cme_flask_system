@@ -4,9 +4,9 @@
 {% include 'partials/_headerLink.html' %}
 
 <style>
-    iframe {
+    .lda-iframe {
         width: 100%;
-        height: 90vh;
+        height: 600px;
         border: none;
     }
 
@@ -14,14 +14,12 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 90vh;
+        height: 600px;
     }
 
     .loader {
         border: 6px solid #f3f3f3;
-        /* Light gray */
         border-top: 6px solid #3498db;
-        /* Blue */
         border-radius: 50%;
         width: 40px;
         height: 40px;
@@ -29,13 +27,23 @@
     }
 
     @keyframes spin {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #0056b3;
+        font-weight: 600;
+    }
+    
+    .tab-pane {
+        padding-top: 20px;
     }
 </style>
 
@@ -53,64 +61,145 @@
             <!-- partial -->
             <div class="main-panel">
                 <div class="content-wrapper pb-0">
-                    <!-- <div id="wordclouds">
-                        <div id="loading" class="flex justify-center items-center h-40">
-                            <div class="row">
-                                <div class="loader"></div>
-                                <p class="ml-3 text-gray-600">Loading word clouds...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="wordclouds"></div> -->
-
-
                     <div class="row">
                         <div class="col">
-
-
                             <div class="card stretch-card mb-3">
                                 <div class="card-body">
+                                 
+                                  
 
-                                    <h1>LDA Topic Modeling Visualization</h1>
 
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h1 class="h1 font-weight-semibold mb-0 text-black">
+                                            LDA Topic Modeling Visualization
+                                         
+                                        </h1>
+                                        
+                                    </div>
 
-                                    <!-- <div class="loader-container" id="loader-container">
-                                        <div id="loading" class="flex justify-content-center items-center h-40">
-                                            <div class="row">
-                                                <div class="loader"></div>
-                                                <p class="ml-3 text-gray-600">Loading LDA Content</p>
+                                      <p class="text-muted">Explore topic distributions for different sentiment categories</p>
+                                    <hr><br>
+                                    <!-- Navigation Tabs -->
+                                    <ul class="nav nav-tabs" id="sentimentTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="positive-tab" data-bs-toggle="tab" 
+                                                    data-bs-target="#positive" type="button" role="tab" 
+                                                    aria-controls="positive" aria-selected="true">
+                                                <i class="fas fa-smile text-success me-2"></i>Positive Sentiment
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="negative-tab" data-bs-toggle="tab" 
+                                                    data-bs-target="#negative" type="button" role="tab" 
+                                                    aria-controls="negative" aria-selected="false">
+                                                <i class="fas fa-frown text-danger me-2"></i>Negative Sentiment
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="neutral-tab" data-bs-toggle="tab" 
+                                                    data-bs-target="#neutral" type="button" role="tab" 
+                                                    aria-controls="neutral" aria-selected="false">
+                                                <i class="fas fa-meh text-warning me-2"></i>Neutral Sentiment
+                                            </button>
+                                        </li>
+                                    </ul>
+                                    
+                                    <!-- Tab Content -->
+                                    <div class="tab-content mt-3" id="sentimentTabContent">
+                                        <!-- Positive Sentiment Tab -->
+                                        <div class="tab-pane fade show active" id="positive" role="tabpanel" 
+                                             aria-labelledby="positive-tab">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5 class="mb-0">Positive Sentiment Topics</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramPositive.html') }}"
+                                                            title="Positive Sentiment LDA Visualization">
+                                                    </iframe>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div> -->
-
-                                    <!-- LDA Visualization -->
-                                    <!-- <iframe id="lda-iframe" src="" title="LDA Visualization"></iframe>
-                                      -->
-
-                                    <div class="tab-content mt-3">
-                                        <div class="tab-pane fade show active" id="positive">
-                                            <iframe src="{{ url_for('static', filename='./lda/final_LDA_n_gramPositive.html') }}"
-                                                width="100%" height="600" style="border:none;"></iframe>
+                                        
+                                        <!-- Negative Sentiment Tab -->
+                                        <div class="tab-pane fade" id="negative" role="tabpanel" 
+                                             aria-labelledby="negative-tab">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5 class="mb-0">Negative Sentiment Topics</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramNegative.html') }}"
+                                                            title="Negative Sentiment LDA Visualization">
+                                                    </iframe>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="tab-pane fade" id="negative">
-                                            <iframe src="{{ url_for('static', filename='lda/final_LDA_n_gramNegative.html') }}"
-                                                width="100%" height="600" style="border:none;"></iframe>
-                                        </div>
-                                        <div class="tab-pane fade" id="neutral">
-                                            <iframe src="{{ url_for('static', filename='lda/final_LDA_n_gramNeutral.html') }}"
-                                                width="100%" height="600" style="border:none;"></iframe>
+                                        
+                                        <!-- Neutral Sentiment Tab -->
+                                        <div class="tab-pane fade" id="neutral" role="tabpanel" 
+                                             aria-labelledby="neutral-tab">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5 class="mb-0">Neutral Sentiment Topics</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramNeutral.html') }}"
+                                                            title="Neutral Sentiment LDA Visualization">
+                                                    </iframe>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Alternative: Show all three in a row (if you prefer side-by-side) -->
+                                    <!-- 
+                                    <div class="row mt-4 d-none"> <!-- Add d-block to show instead of tabs
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-header">
+                                                    <h5>Positive Sentiment</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramPositive.html') }}">
+                                                    </iframe>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-header">
+                                                    <h5>Negative Sentiment</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramNegative.html') }}">
+                                                    </iframe>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card h-100">
+                                                <div class="card-header">
+                                                    <h5>Neutral Sentiment</h5>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <iframe class="lda-iframe" 
+                                                            src="{{ url_for('static', filename='lda/final_LDA_n_gramNeutral.html') }}">
+                                                    </iframe>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    -->
                                 </div>
                             </div>
                         </div>
-
                     </div>
-
-
-
-
                 </div>
                 <!-- content-wrapper ends -->
                 <!-- partial:partials/_footer.html -->
@@ -122,28 +211,32 @@
         <!-- page-body-wrapper ends -->
     </div>
 
-    <!-- <script>
-        window.addEventListener("DOMContentLoaded", () => {
-            const iframe = document.getElementById("lda-iframe");
-            const loader = document.getElementById("loader-container");
-
-            // Fetch the LDA visualization asynchronously
-            fetch("/lda_visualization")
-                .then(response => response.text())
-                .then(html => {
-                    const blob = new Blob([html], { type: "text/html" });
-                    const url = URL.createObjectURL(blob);
-
-                    iframe.src = url;
-                    iframe.style.display = "block";
-                    loader.style.display = "none";  // Hide the loader
-                })
-                .catch(error => {
-                    console.error("Error loading LDA visualization:", error);
-                    loader.innerHTML = "<p>Failed to load LDA visualization.</p>";
+    <!-- Bootstrap Bundle with Popper (if not already included) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- FontAwesome for icons -->
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    
+    <script>
+        // Optional: Add some JavaScript to handle iframe loading states
+        document.addEventListener('DOMContentLoaded', function() {
+            const iframes = document.querySelectorAll('.lda-iframe');
+            const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+            
+            // Show loading state when switching tabs (optional)
+            tabs.forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function(event) {
+                    const targetId = event.target.getAttribute('data-bs-target');
+                    const targetPane = document.querySelector(targetId);
+                    const iframe = targetPane.querySelector('.lda-iframe');
+                    
+                    // Reset iframe src to ensure it loads (optional)
+                    // iframe.src = iframe.src;
                 });
+            });
         });
-    </script> -->
+    </script>
+
     <!-- container-scroller -->
     <!-- plugins:js -->
     <!-- Vendor JS -->
@@ -170,7 +263,6 @@
 
     <!-- Custom JS for this page -->
     <script src="{{ url_for('static', filename='assets/js/dashboard.js') }}"></script>
-
     <!-- End custom js for this page -->
 </body>
 
